@@ -1,0 +1,22 @@
+{
+  "name": "gpu_accelerated_particles",
+  "description": "",
+  "main": "server.js",
+  "authors": [
+    "Vis Viva"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "dat.gui": "*",
+    "gl-matrix": "^2.3.2"
+  }
+}
