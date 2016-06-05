@@ -1,4 +1,4 @@
-// Fragment Shader
+// Simple shader
 
 void function(){
 
@@ -16,15 +16,29 @@ void function(){
   };
 
   var shader = {
-    type : 'fragment',
     name : 'sample',
-    source : `
+    vertexSource : `
+    attribute vec3 aVertexPosition;
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    void main(void) {
+      gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    }
+    `,
+    fragmentSource : `
     void main(void) {
       gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
-    `
+    `,
+    attributes: {
+      aVertexPosition : {}
+    },
+    uniforms: {
+      uMVMatrix : { value : null},
+      uPMatrix : { value : null}
+    }
   };
 
-  application.renderer.shaders.push(shader);
+  application.renderer.addShader(shader);
 
 }();

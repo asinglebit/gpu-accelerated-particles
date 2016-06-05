@@ -20,9 +20,15 @@ var application = application || (function () {
     };
     // Setup polyfills
     _initializeRequestAnimationFrame();
-    // Initialize systems
+    // Initialize renderer
     application.renderer.initialize(canvas);
+    // Resize event
+    window.addEventListener('resize', function(event){
+      application.renderer.resize();
+    });
+    // Initialize GUI
     _initializeGUI();
+    // Start rendering
     _tick();
   };
 
@@ -41,14 +47,10 @@ var application = application || (function () {
   }
 
   var _initializeGUI = function(){
-
     // References
-
     var background_color = application.renderer.params.colors.background;
     var particles_color = application.renderer.params.colors.particles;
-
     // Controls
-
     var controls = {
       background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],
       particles: [particles_color.r * 255, particles_color.g * 255, particles_color.b * 255],
@@ -56,9 +58,7 @@ var application = application || (function () {
         _clear();
       }
     };
-
     // Setup GUI
-
     _gui = new dat.GUI();
     _gui.addColor(controls, "background").onChange(function(value) {
       if (value[0] === "#") value = application.utilities.hexademicalToRGB(value);
@@ -83,4 +83,5 @@ var application = application || (function () {
       _initialize(canvas);
     }
   };
+
 })();
