@@ -24,6 +24,13 @@ void function(){
     },
     RGBtoHexademical : function(r, g, b){
       return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    },
+    destructureRGBColor : function(color){
+      return {
+        r : color[0] / 255.0,
+        g : color[1] / 255.0,
+        b : color[2] / 255.0
+      }
     }
   };
 
