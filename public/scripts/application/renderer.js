@@ -19,6 +19,7 @@ void function(){
   var _height = null;
 
   var _buffer = null;
+  var _color_buffer = null;
   var _shader = null;
 
   var _perspective_matrix = null;
@@ -56,7 +57,10 @@ void function(){
     vec3.set(translation, 0, 0, -2);
     mat4.translate(_model_view_matrix, _model_view_matrix, translation);
     // Update shaders
+    _context.bindBuffer(_context.ARRAY_BUFFER, _buffer);
     _context.vertexAttribPointer(_shader.attributes.aVertexPosition, 3, _context.FLOAT, false, 0, 0);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _color_buffer);
+    _context.vertexAttribPointer(_shader.attributes.aVertexColor, 4, _context.FLOAT, false, 0, 0);
     _context.uniformMatrix4fv(_shader.uniforms.uPMatrix, false, _perspective_matrix);
     _context.uniformMatrix4fv(_shader.uniforms.uMVMatrix, false, _model_view_matrix);
     _context.drawArrays(_context.TRIANGLE_STRIP, 0, 4);
@@ -76,6 +80,11 @@ void function(){
     _context.bindBuffer(_context.ARRAY_BUFFER, _buffer);
     var vertices = [1.0, 1.0, 0.0, -1.0, 1.0, 0.0, 1.0, -1.0, 0.0, -1.0, -1.0, 0.0];
     _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
+
+    _color_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _color_buffer);
+    var colors = [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0];
+    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(colors), _context.STATIC_DRAW);
   }
 
   // Shader
@@ -98,6 +107,8 @@ void function(){
     // Bind attributes
     _shader.attributes.aVertexPosition = _context.getAttribLocation(_shader.program, "aVertexPosition");
     _context.enableVertexAttribArray(_shader.attributes.aVertexPosition);
+    _shader.attributes.aVertexColor = _context.getAttribLocation(_shader.program, "aVertexColor");
+    _context.enableVertexAttribArray(_shader.attributes.aVertexColor);
     // Bind uniforms
     _shader.uniforms.uMVMatrix = _context.getUniformLocation(_shader.program, "uMVMatrix");
     _shader.uniforms.uPMatrix = _context.getUniformLocation(_shader.program, "uPMatrix");
