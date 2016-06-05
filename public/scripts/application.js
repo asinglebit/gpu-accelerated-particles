@@ -1,70 +1,119 @@
-// Application constructor
-function Application(){
-  var that = this;
+// Framework
 
-  that.canvas = null;
-  that.context = null;
-  that.width = null;
-  that.height = null;
-  that.gui = null;
-  that.controls = null;
+var application = application || (function () {
 
-  that.params = {
-    colors: {
-      background: {r: 1, g: 1, b: 1}
-    }
-  };
-};
+  'use strict';
 
-// Initialize
-Application.prototype.initialize = function(canvas){
-  var that = this;
+  // Private space
 
-  // Get canvas
-  that.canvas = document.getElementById(canvas);
-  that.width = that.canvas.offsetWidth;
-  that.height = that.canvas.offsetHeight;
-  // Get context
-  that.context = that.canvas.getContext("experimental-webgl");
-  that.context.viewport(0, 0, canvas.width, canvas.height);
-  // Initialize systems
-  that.initializeGUI();
-};
+  var _canvas = null;
+  var _width = null;
+  var _height = null;
+  var _gui = null;
 
-Application.prototype.tick = function(){
-  var that = this;
+  var _initialize = function(canvas){
 
-  requestAnimationFrame(that.tick);
-}
+    // Check application availability
 
-// Clear background
-Application.prototype.clear = function(){
-  var that = this;
-  var background_color = that.params.colors.background;
+    if (typeof application.renderer == "undefined") {
+      console.log("application.js : No 'renderer' module found! Be sure to load it up first!");
+      return;
+    };
 
-  that.context.clearColor(background_color.r, background_color.g, background_color.b, 1.0);
-  that.context.clear(that.context.COLOR_BUFFER_BIT);
-}
+    if (typeof application.utilities == "undefined") {
+      console.log("application.js : No 'utilities' module found! Be sure to load it up first!");
+      return;
+    };
 
-// Initialize GUI
-Application.prototype.initializeGUI = function(){
-  var that = this;
+    // Setup polyfills
 
-  that.controls = {
-    background: [255, 255, 255],
-    clear: function() {
-      that.clear();
-    }
+    _initializeRequestAnimationFrame();
+
+    // Get canvas
+
+    _canvas = document.getElementById(canvas);
+    _width = canvas.offsetWidth;
+    _height = canvas.offsetHeight;
+
+    // Get context
+
+    application.renderer.context = _canvas.getContext("experimental-webgl");
+    application.renderer.context.viewport(0, 0, _canvas.width, _canvas.height);
+
+    // Initialize systems
+
+    _initializeGUI();
+    _tick();
   };
 
-  that.gui = new dat.GUI();
+  var _initializeRequestAnimationFrame = function(){
+    if (!window.requestAnimationFrame){
+      window.requestAnimationFrame = (function(){
+        return window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.oRequestAnimationFrame ||
+        window.msRequestAnimationFrame ||
+        function(callback, element){
+          window.setTimeout(callback, 1000 / 60);
+        };
+      })();
+    };
+  }
 
-  that.gui.addColor(that.controls, "background").onChange(function(value) {
-    if (value[0] === "#") value = Utilities.hexademicalToRGB(value);
-    that.params.colors.background.r = value[0] / 255.0;
-    that.params.colors.background.g = value[1] / 255.0;
-    that.params.colors.background.b = value[2] / 255.0;
-  });
+  var _initializeGUI = function(){
 
-  that.gui.add(that.controls, "clear");
-}
+    // References
+
+    var background_color = application.renderer.params.colors.background;
+    var particles_color = application.renderer.params.colors.particles;
+
+    // Controls
+
+    var controls = {
+      background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],
+      particles: [particles_color.r * 255, particles_color.g * 255, particles_color.b * 255],
+      clear: function() {
+        _clear();
+      }
+    };
+
+    // Setup GUI
+
+    _gui = new dat.GUI();
+    _gui.addColor(controls, "background").onChange(function(value) {
+      if (value[0] === "#") value = application.utilities.hexademicalToRGB(value);
+      application.renderer.params.colors.background.r = value[0] / 255.0;
+      application.renderer.params.colors.background.g = value[1] / 255.0;
+      application.renderer.params.colors.background.b = value[2] / 255.0;
+    });
+    _gui.addColor(controls, "particles").onChange(function(value) {
+      if (value[0] === "#") value = application.utilities.hexademicalToRGB(value);
+      application.renderer.params.colors.particles.r = value[0] / 255.0;
+      application.renderer.params.colors.particles.g = value[1] / 255.0;
+      application.renderer.params.colors.particles.b = value[2] / 255.0;
+    });
+    _gui.add(controls, "clear");
+  };
+
+  var _tick = function tick(){
+
+    // Actions
+
+    application.renderer.clear();
+
+    // Setup the next frame
+
+    requestAnimationFrame(tick);
+  }
+
+  // Public space
+
+  return {
+
+    // Initialize the application
+
+    initialize: function (canvas) {
+      _initialize(canvas);
+    }
+  };
+})();
