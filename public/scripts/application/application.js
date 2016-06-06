@@ -52,8 +52,7 @@ var application = application || (function () {
     var particles_color = application.renderer.params.colors.particles;
     // Controls
     var controls = {
-      background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],
-      particles: [particles_color.r * 255, particles_color.g * 255, particles_color.b * 255],
+      background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],      
       clear: function() {
         _clear();
       }

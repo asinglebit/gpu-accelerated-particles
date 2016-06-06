@@ -91,7 +91,7 @@ void function(){
 
   var _clear = function(){
     var background_color = renderer.params.colors.background;
-    _context.clearColor(background_color.r, background_color.g, background_color.b, 1.0);
+    _context.clearColor(background_color.r, background_color.g, background_color.b, 0.0);
     _context.clearDepth(1.0);
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
@@ -185,8 +185,7 @@ void function(){
 
     params : {
       colors: {
-        background: {r: 0.2, g: 0.2, b: 0.2},
-        particles: {r: 0.9, g: 0.9, b: 0.9}
+        background: {r: 0, g: 0, b: 0}        
       }
     },
 
