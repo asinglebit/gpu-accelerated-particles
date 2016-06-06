@@ -3,7 +3,8 @@ var gulp = require('gulp'),
 
 var libs = [
   'bower_components/dat.gui/dat.gui.min.js',
-  'bower_components/gl-matrix/dist/gl-matrix-min.js'
+  'bower_components/gl-matrix/dist/gl-matrix-min.js',
+  'bower_components/mousetrap/mousetrap.min.js'
 ];
 
 gulp.task('cleanup-pre', function(){

@@ -17,6 +17,7 @@
   ],
   "dependencies": {
     "dat.gui": "*",
-    "gl-matrix": "^2.3.2"
+    "gl-matrix": "^2.3.2",
+    "mousetrap": "^1.6.0"
   }
 }
