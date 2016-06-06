@@ -26,10 +26,9 @@ void function(){
   var _cube_vertices_index_buffer = null;
   var _cube_image;
   var _cube_texture;
-  var _cube_rotation = 0.03;
   var _cube_model_matrix = null;
   var _cube_model_view_matrix = null;
-  var _shader = null;
+  var _cube_shader = null;
 
   // Private methods
 
@@ -41,8 +40,7 @@ void function(){
     _context.depthFunc(_context.LEQUAL);
     // Initialize camera
     _camera = new application.camera(100, 0.1, 100.0, window.innerWidth/window.innerHeight);
-    _camera.pos = [0,0,5];
-    _camera.update();
+    _camera.pos = [0, 0, 5];
     // Initialize matrices
     _cube_model_matrix = mat4.create();
     _cube_model_view_matrix = mat4.create();
@@ -66,27 +64,27 @@ void function(){
   var _tick = function(){
     // Clear background
     _clear();
-    // Update matrices
-    mat4.rotate(_cube_model_matrix, _cube_model_matrix, _cube_rotation, [-0.4, -0.3, 0.5]);
-    mat4.mul(_cube_model_view_matrix, _camera.viewMat, _cube_model_matrix);
+    // Update model matrices
+    mat4.rotate(_cube_model_matrix, _cube_model_matrix, 0.03, [-0.4, -0.3, 0.5]);
+    mat4.mul(_cube_model_view_matrix, _camera.view_matrix, _cube_model_matrix);
     // Update shaders
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
-    _context.vertexAttribPointer(_shader.attributes.aVertexPosition, 3, _context.FLOAT, false, 0, 0);
+    _context.vertexAttribPointer(_cube_shader.attributes.aVertexPosition, 3, _context.FLOAT, false, 0, 0);
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_texture_coord_buffer);
-    _context.vertexAttribPointer(_shader.attributes.aTextureCoord, 2, _context.FLOAT, false, 0, 0);
+    _context.vertexAttribPointer(_cube_shader.attributes.aTextureCoord, 2, _context.FLOAT, false, 0, 0);
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_normal_buffer);
-    _context.vertexAttribPointer(_shader.attributes.aVertexNormal, 3, _context.FLOAT, false, 0, 0);
+    _context.vertexAttribPointer(_cube_shader.attributes.aVertexNormal, 3, _context.FLOAT, false, 0, 0);
     _context.activeTexture(_context.TEXTURE0);
     _context.bindTexture(_context.TEXTURE_2D, _cube_texture);
-    _context.uniform1i(_shader.uniforms.uSampler, 0);
+    _context.uniform1i(_cube_shader.uniforms.uSampler, 0);
     _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
     // Set up transformations
-    _context.uniformMatrix4fv(_shader.uniforms.uPMatrix, false, _camera.projMat);
-    _context.uniformMatrix4fv(_shader.uniforms.uMVMatrix, false, _cube_model_view_matrix);
+    _context.uniformMatrix4fv(_cube_shader.uniforms.uPMatrix, false, _camera.projection_matrix);
+    _context.uniformMatrix4fv(_cube_shader.uniforms.uMVMatrix, false, _cube_model_view_matrix);
     var _normal_matrix = mat4.create();
     mat4.invert(_normal_matrix, _cube_model_view_matrix);
     mat4.transpose(_normal_matrix, _normal_matrix);
-    _context.uniformMatrix4fv(_shader.uniforms.uNormalMatrix, false, new Float32Array(_normal_matrix));
+    _context.uniformMatrix4fv(_cube_shader.uniforms.uNormalMatrix, false, new Float32Array(_normal_matrix));
     // Draw
     _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
   };
@@ -140,30 +138,30 @@ void function(){
   var _registerShader = function(){
     // Vertex shader
     var vertexShader = _context.createShader(_context.VERTEX_SHADER);
-    _context.shaderSource(vertexShader, _shader.vertexSource);
+    _context.shaderSource(vertexShader, _cube_shader.vertexSource);
     _context.compileShader(vertexShader);
     // Fragment shader
     var fragmentShader = _context.createShader(_context.FRAGMENT_SHADER);
-    _context.shaderSource(fragmentShader, _shader.fragmentSource);
+    _context.shaderSource(fragmentShader, _cube_shader.fragmentSource);
     _context.compileShader(fragmentShader);
     // Shader program
-    _shader.program = _context.createProgram();
-    _context.attachShader(_shader.program, vertexShader);
-    _context.attachShader(_shader.program, fragmentShader);
-    _context.linkProgram(_shader.program);
-    _context.useProgram(_shader.program);
+    _cube_shader.program = _context.createProgram();
+    _context.attachShader(_cube_shader.program, vertexShader);
+    _context.attachShader(_cube_shader.program, fragmentShader);
+    _context.linkProgram(_cube_shader.program);
+    _context.useProgram(_cube_shader.program);
     // Bind attributes
-    _shader.attributes.aVertexPosition = _context.getAttribLocation(_shader.program, "aVertexPosition");
-    _context.enableVertexAttribArray(_shader.attributes.aVertexPosition);
-    _shader.attributes.aTextureCoord = _context.getAttribLocation(_shader.program, "aTextureCoord");
-    _context.enableVertexAttribArray(_shader.attributes.aTextureCoord);
-    _shader.attributes.aVertexNormal = _context.getAttribLocation(_shader.program, "aVertexNormal");
-    _context.enableVertexAttribArray(_shader.attributes.aVertexNormal);
+    _cube_shader.attributes.aVertexPosition = _context.getAttribLocation(_cube_shader.program, "aVertexPosition");
+    _context.enableVertexAttribArray(_cube_shader.attributes.aVertexPosition);
+    _cube_shader.attributes.aTextureCoord = _context.getAttribLocation(_cube_shader.program, "aTextureCoord");
+    _context.enableVertexAttribArray(_cube_shader.attributes.aTextureCoord);
+    _cube_shader.attributes.aVertexNormal = _context.getAttribLocation(_cube_shader.program, "aVertexNormal");
+    _context.enableVertexAttribArray(_cube_shader.attributes.aVertexNormal);
     // Bind uniforms
-    _shader.uniforms.uMVMatrix = _context.getUniformLocation(_shader.program, "uMVMatrix");
-    _shader.uniforms.uPMatrix = _context.getUniformLocation(_shader.program, "uPMatrix");
-    _shader.uniforms.uNormalMatrix = _context.getUniformLocation(_shader.program, "uNormalMatrix");
-    _shader.uniforms.uSampler = _context.getUniformLocation(_shader.program, "uSampler");
+    _cube_shader.uniforms.uMVMatrix = _context.getUniformLocation(_cube_shader.program, "uMVMatrix");
+    _cube_shader.uniforms.uPMatrix = _context.getUniformLocation(_cube_shader.program, "uPMatrix");
+    _cube_shader.uniforms.uNormalMatrix = _context.getUniformLocation(_cube_shader.program, "uNormalMatrix");
+    _cube_shader.uniforms.uSampler = _context.getUniformLocation(_cube_shader.program, "uSampler");
   }
 
   // Data bindings
@@ -173,7 +171,7 @@ void function(){
   }
 
   var _addShader = function(shader){
-    _shader = shader;
+    _cube_shader = shader;
   }
 
   // Public
