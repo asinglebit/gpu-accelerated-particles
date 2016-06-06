@@ -18,8 +18,15 @@ void function(){
   var _width = null;
   var _height = null;
 
-  var _buffer = null;
-  var _color_buffer = null;
+  var _cube_vertices_buffer = null;
+  var _cube_vertices_texture_coord_buffer = null;
+  var _cube_vertices_normal_buffer = null;
+  var _cube_vertices_index_buffer = null;
+
+  var _cube_image;
+  var _cube_texture;
+  var _cube_rotation = 0.03;
+
   var _shader = null;
 
   var _perspective_matrix = null;
@@ -28,42 +35,58 @@ void function(){
   // Private methods
 
   var _initialize = function(canvas){
+    // Get context
     _canvas = document.getElementById(canvas);
     _context = _canvas.getContext("experimental-webgl");
     _context.enable(_context.DEPTH_TEST);
     _context.depthFunc(_context.LEQUAL);
-
+    // Initialize matrices
+    _model_view_matrix = mat4.create();
+    // Translations
+    var translation = vec3.create();
+    vec3.set(translation, 0, 0, -10);
+    mat4.translate(_model_view_matrix, _model_view_matrix, translation);
+    // Resize viewport
     _resize();
-
+    _clear();
+    // Initialize systems
     _registerShader();
     _initBuffers();
-    _clear();
+    _initTextures();
   };
 
   var _resize = function(){
     _width = _canvas.width  = window.innerWidth;
     _height = _canvas.height = window.innerHeight;
     _context.viewport(0, 0, _width, _height);
+    _perspective_matrix = mat4.perspective(mat4.create(), 100, _width/_height, 0.1, 100.0);
   }
 
   var _tick = function(){
     // Clear background
     _clear();
-    // Calculate matrices
-    _perspective_matrix = mat4.perspective(mat4.create(), 40, _width/_height, 0.1, 100.0);
-    _model_view_matrix = mat4.create();
-    // Translations
-    var translation = vec3.create();
-    vec3.set(translation, 0, 0, -2);
-    mat4.translate(_model_view_matrix, _model_view_matrix, translation);
+    // Update matrices
+    mat4.rotate(_model_view_matrix, _model_view_matrix, _cube_rotation, [-0.6, 0.3, 1]);
     // Update shaders
-    _context.bindBuffer(_context.ARRAY_BUFFER, _buffer);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
     _context.vertexAttribPointer(_shader.attributes.aVertexPosition, 3, _context.FLOAT, false, 0, 0);
-    _context.bindBuffer(_context.ARRAY_BUFFER, _color_buffer);
-    _context.vertexAttribPointer(_shader.attributes.aVertexColor, 4, _context.FLOAT, false, 0, 0);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_texture_coord_buffer);
+    _context.vertexAttribPointer(_shader.attributes.aTextureCoord, 2, _context.FLOAT, false, 0, 0);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_normal_buffer);
+    _context.vertexAttribPointer(_shader.attributes.aVertexNormal, 3, _context.FLOAT, false, 0, 0);
+    _context.activeTexture(_context.TEXTURE0);
+    _context.bindTexture(_context.TEXTURE_2D, _cube_texture);
+    _context.uniform1i(_shader.uniforms.uSampler, 0);
+    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
+    // Set up transformations
     _context.uniformMatrix4fv(_shader.uniforms.uPMatrix, false, _perspective_matrix);
     _context.uniformMatrix4fv(_shader.uniforms.uMVMatrix, false, _model_view_matrix);
-    _context.drawArrays(_context.TRIANGLE_STRIP, 0, 4);
+    var _normal_matrix = mat4.create();
+    mat4.invert(_normal_matrix, _model_view_matrix);
+    mat4.transpose(_normal_matrix, _normal_matrix);
+    _context.uniformMatrix4fv(_shader.uniforms.uNormalMatrix, false, new Float32Array(_normal_matrix));
+    // Draw
+    _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
   };
 
   var _clear = function(){
@@ -76,16 +99,42 @@ void function(){
   // Buffer
 
   var _initBuffers = function(){
-    _buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, _buffer);
-    var vertices = [1.0, 1.0, 0.0, -1.0, 1.0, 0.0, 1.0, -1.0, 0.0, -1.0, -1.0, 0.0];
+    _cube_vertices_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
+    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
     _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
 
-    _color_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, _color_buffer);
-    var colors = [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0];
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(colors), _context.STATIC_DRAW);
+    _cube_vertices_normal_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_normal_buffer);
+    var vertexNormals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
+    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertexNormals), _context.STATIC_DRAW);
+
+    _cube_vertices_texture_coord_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_texture_coord_buffer);
+    var textureCoordinates = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(textureCoordinates), _context.STATIC_DRAW);
+
+    _cube_vertices_index_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
+    var cubeVertexIndices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+    _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), _context.STATIC_DRAW);
   }
+
+  // Textures
+
+  var _initTextures = function() {
+    _cube_texture = _context.createTexture();
+    _cube_image = new Image();
+    _cube_image.src = "resources/blank.png";
+    _cube_image.onload = function() {
+      _context.bindTexture(_context.TEXTURE_2D, _cube_texture);
+      _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _context.RGBA, _context.UNSIGNED_BYTE, _cube_image);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.LINEAR);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.LINEAR_MIPMAP_NEAREST);
+      _context.generateMipmap(_context.TEXTURE_2D);
+      _context.bindTexture(_context.TEXTURE_2D, null);
+    };
+  };
 
   // Shader
 
@@ -107,11 +156,15 @@ void function(){
     // Bind attributes
     _shader.attributes.aVertexPosition = _context.getAttribLocation(_shader.program, "aVertexPosition");
     _context.enableVertexAttribArray(_shader.attributes.aVertexPosition);
-    _shader.attributes.aVertexColor = _context.getAttribLocation(_shader.program, "aVertexColor");
-    _context.enableVertexAttribArray(_shader.attributes.aVertexColor);
+    _shader.attributes.aTextureCoord = _context.getAttribLocation(_shader.program, "aTextureCoord");
+    _context.enableVertexAttribArray(_shader.attributes.aTextureCoord);
+    _shader.attributes.aVertexNormal = _context.getAttribLocation(_shader.program, "aVertexNormal");
+    _context.enableVertexAttribArray(_shader.attributes.aVertexNormal);
     // Bind uniforms
     _shader.uniforms.uMVMatrix = _context.getUniformLocation(_shader.program, "uMVMatrix");
     _shader.uniforms.uPMatrix = _context.getUniformLocation(_shader.program, "uPMatrix");
+    _shader.uniforms.uNormalMatrix = _context.getUniformLocation(_shader.program, "uNormalMatrix");
+    _shader.uniforms.uSampler = _context.getUniformLocation(_shader.program, "uSampler");
   }
 
   // Data bindings

@@ -18,29 +18,44 @@ void function(){
   var shader = {
     name : 'sample',
     vertexSource : `
-    attribute vec3 aVertexPosition;
-    attribute vec4 aVertexColor;
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
-    varying lowp vec4 vColor;
+    attribute highp vec3 aVertexNormal;
+    attribute highp vec3 aVertexPosition;
+    attribute highp vec2 aTextureCoord;
+    uniform highp mat4 uNormalMatrix;
+    uniform highp mat4 uMVMatrix;
+    uniform highp mat4 uPMatrix;
+    varying highp vec2 vTextureCoord;
+    varying highp vec3 vLighting;
     void main(void) {
       gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-      vColor = aVertexColor;
+      vTextureCoord = aTextureCoord;
+      highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);
+      highp vec3 directionalLightColor = vec3(0.5, 0.5, 0.75);
+      highp vec3 directionalVector = vec3(0.85, 0.8, 0.75);
+      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+      vLighting = ambientLight + (directionalLightColor * directional);
     }
     `,
     fragmentSource : `
-    varying lowp vec4 vColor;
+    varying highp vec2 vTextureCoord;
+    varying highp vec3 vLighting;
+    uniform sampler2D uSampler;
     void main(void) {
-      gl_FragColor = vColor;
+      highp vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+      gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);
     }
     `,
     attributes: {
       aVertexPosition : {},
-      aVertexColor : {}
+      aTextureCoord : {},
+      aVertexNormal : {}
     },
     uniforms: {
       uMVMatrix : { value : null},
-      uPMatrix : { value : null}
+      uPMatrix : { value : null},
+      uNormalMatrix : { value : null},
+      uSampler : { value : null}
     }
   };
 
