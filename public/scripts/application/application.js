@@ -6,9 +6,9 @@ var application = application || (function () {
 
   // Private space
 
-  var K_ROTATE = 0.01;
-  var K_PAN = 0.01;
-  var K_ZOOM = 0.01;
+  var K_ROTATE = 0.03;
+  var K_PAN = 0.03;
+  var K_ZOOM = 0.03;
 
   var _canvas = null;
   var _gui = null;
@@ -16,7 +16,7 @@ var application = application || (function () {
   var _control_cam = false;
 
   var _initialize = function(canvas){
-    
+
     // Check application availability
 
     if (typeof application.renderer == "undefined") {

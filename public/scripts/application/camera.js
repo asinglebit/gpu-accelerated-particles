@@ -26,9 +26,9 @@ void function(){
 
     this.yaw_angle = 0.0;
     this.pitch_angle = 0.0;
-    this.radius = 1.0;
+    this.radius = 5.0;
 
-    this.pos = [0.0, 0.0, 1.0];
+    this.pos = [0.0, 0.0, this.radius];
     this.target = [0.0, 0.0, 0.0];
     this.up = [0.0, 1.0, 0.0];
     this.right  = [1.0, 0.0, 0.0];
@@ -47,7 +47,7 @@ void function(){
   camera.prototype.reset = function() {
     this.yaw_angle = 0.0;
     this.pitch_angle = 0.0;
-    this.radius = 1.0;
+    this.radius = 5.0;
     this.pos = [0.0, 0.0, this.radius];
     this.target = [0.0, 0.0, 0.0];
     this.up = [0.0, 1.0, 0.0];
