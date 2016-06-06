@@ -18,19 +18,18 @@ void function(){
   var _width = null;
   var _height = null;
 
+  var _camera = null;
+
   var _cube_vertices_buffer = null;
   var _cube_vertices_texture_coord_buffer = null;
   var _cube_vertices_normal_buffer = null;
   var _cube_vertices_index_buffer = null;
-
   var _cube_image;
   var _cube_texture;
   var _cube_rotation = 0.03;
-
+  var _cube_model_matrix = null;
+  var _cube_model_view_matrix = null;
   var _shader = null;
-
-  var _perspective_matrix = null;
-  var _model_view_matrix = null;
 
   // Private methods
 
@@ -40,12 +39,13 @@ void function(){
     _context = _canvas.getContext("experimental-webgl");
     _context.enable(_context.DEPTH_TEST);
     _context.depthFunc(_context.LEQUAL);
+    // Initialize camera
+    _camera = new application.camera(100, 0.1, 100.0, window.innerWidth/window.innerHeight);
+    _camera.pos = [0,0,5];
+    _camera.update();
     // Initialize matrices
-    _model_view_matrix = mat4.create();
-    // Translations
-    var translation = vec3.create();
-    vec3.set(translation, 0, 0, -10);
-    mat4.translate(_model_view_matrix, _model_view_matrix, translation);
+    _cube_model_matrix = mat4.create();
+    _cube_model_view_matrix = mat4.create();
     // Resize viewport
     _resize();
     _clear();
@@ -59,14 +59,16 @@ void function(){
     _width = _canvas.width  = window.innerWidth;
     _height = _canvas.height = window.innerHeight;
     _context.viewport(0, 0, _width, _height);
-    _perspective_matrix = mat4.perspective(mat4.create(), 100, _width/_height, 0.1, 100.0);
+    _camera.aspect = _width/_height;
+    _camera.update();
   }
 
   var _tick = function(){
     // Clear background
     _clear();
     // Update matrices
-    mat4.rotate(_model_view_matrix, _model_view_matrix, _cube_rotation, [-0.6, 0.3, 1]);
+    mat4.rotate(_cube_model_matrix, _cube_model_matrix, _cube_rotation, [-0.4, -0.3, 0.5]);
+    mat4.mul(_cube_model_view_matrix, _camera.viewMat, _cube_model_matrix);
     // Update shaders
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
     _context.vertexAttribPointer(_shader.attributes.aVertexPosition, 3, _context.FLOAT, false, 0, 0);
@@ -79,10 +81,10 @@ void function(){
     _context.uniform1i(_shader.uniforms.uSampler, 0);
     _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
     // Set up transformations
-    _context.uniformMatrix4fv(_shader.uniforms.uPMatrix, false, _perspective_matrix);
-    _context.uniformMatrix4fv(_shader.uniforms.uMVMatrix, false, _model_view_matrix);
+    _context.uniformMatrix4fv(_shader.uniforms.uPMatrix, false, _camera.projMat);
+    _context.uniformMatrix4fv(_shader.uniforms.uMVMatrix, false, _cube_model_view_matrix);
     var _normal_matrix = mat4.create();
-    mat4.invert(_normal_matrix, _model_view_matrix);
+    mat4.invert(_normal_matrix, _cube_model_view_matrix);
     mat4.transpose(_normal_matrix, _normal_matrix);
     _context.uniformMatrix4fv(_shader.uniforms.uNormalMatrix, false, new Float32Array(_normal_matrix));
     // Draw
@@ -103,17 +105,14 @@ void function(){
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
     var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
     _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
-
     _cube_vertices_normal_buffer = _context.createBuffer();
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_normal_buffer);
     var vertexNormals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
     _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertexNormals), _context.STATIC_DRAW);
-
     _cube_vertices_texture_coord_buffer = _context.createBuffer();
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_texture_coord_buffer);
     var textureCoordinates = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(textureCoordinates), _context.STATIC_DRAW);
-
     _cube_vertices_index_buffer = _context.createBuffer();
     _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
     var cubeVertexIndices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
@@ -185,7 +184,7 @@ void function(){
 
     params : {
       colors: {
-        background: {r: 0, g: 0, b: 0}        
+        background: {r: 0, g: 0, b: 0}
       }
     },
 
