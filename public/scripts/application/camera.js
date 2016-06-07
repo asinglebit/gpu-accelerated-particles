@@ -18,17 +18,22 @@ void function(){
 
   // Private members
 
+  var HOME_VIEW = {
+    YAW_ANGLE : 0.8,
+    PITCH_ANGLE : 0.6,
+    RADIUS : 5
+  }
+
   var camera = function(fov, near, far, aspect) {
     this.fov = fov;
     this.near = near;
     this.far = far;
     this.aspect = aspect;
 
-    this.yaw_angle = 0.0;
-    this.pitch_angle = 0.0;
-    this.radius = 5.0;
-
-    this.pos = [0.0, 0.0, this.radius];
+    this.yaw_angle = HOME_VIEW.YAW_ANGLE;
+    this.pitch_angle = HOME_VIEW.PITCH_ANGLE;
+    this.radius = HOME_VIEW.RADIUS;
+    this.pos = [0.0, 0.0, HOME_VIEW.RADIUS];
     this.target = [0.0, 0.0, 0.0];
     this.up = [0.0, 1.0, 0.0];
     this.right  = [1.0, 0.0, 0.0];
@@ -39,16 +44,23 @@ void function(){
   };
 
   camera.prototype.update = function() {
+
+    // Update variables
+
+    this.calculate();
+
+    // Update matrices
+
     mat4.lookAt(this.view_matrix, this.pos, this.target, this.up);
-    mat4.perspective(this.projection_matrix, this.fov*2.0, this.aspect, this.near, this.far);
+    mat4.perspective(this.projection_matrix, this.fov * 2.0, this.aspect, this.near, this.far);
     mat4.mul(this.view_projection_matrix, this.projection_matrix, this.view_matrix);
   };
 
   camera.prototype.reset = function() {
-    this.yaw_angle = 0.0;
-    this.pitch_angle = 0.0;
-    this.radius = 5.0;
-    this.pos = [0.0, 0.0, this.radius];
+    this.yaw_angle = HOME_VIEW.YAW_ANGLE;
+    this.pitch_angle = HOME_VIEW.PITCH_ANGLE;
+    this.radius = HOME_VIEW.RADIUS;
+    this.pos = [0.0, 0.0, HOME_VIEW.RADIUS];
     this.target = [0.0, 0.0, 0.0];
     this.up = [0.0, 1.0, 0.0];
     this.right = [1.0, 0.0, 0.0];
@@ -82,6 +94,7 @@ void function(){
 
   // Public
 
-  application.camera = camera;
+  application.constructors = application.constructors || {};
+  application.constructors.camera = camera;
 
 }();

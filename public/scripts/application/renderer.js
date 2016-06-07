@@ -20,6 +20,8 @@ void function(){
 
   var _camera = null;
 
+  // TODO: Need to refactor object holding structures
+
   var _cube_vertices_buffer = null;
   var _cube_vertices_texture_coord_buffer = null;
   var _cube_vertices_normal_buffer = null;
@@ -29,6 +31,7 @@ void function(){
   var _cube_model_matrix = null;
   var _cube_model_view_matrix = null;
   var _cube_shader = null;
+  var _cube_animated = false;
 
   // Private methods
 
@@ -36,15 +39,14 @@ void function(){
 
     // Get context
 
-    _canvas = canvas;
+    _canvas = document.getElementById(canvas);
     _context = _canvas.getContext("experimental-webgl");
     _context.enable(_context.DEPTH_TEST);
     _context.depthFunc(_context.LEQUAL);
 
     // Initialize camera
 
-    _camera = new application.camera(100, 0.1, 100.0, window.innerWidth/window.innerHeight);
-    _camera.pos = [0, 0, 5];
+    _camera = new application.constructors.camera(100, 0.1, 100.0, window.innerWidth/window.innerHeight);
 
     // Initialize matrices
 
@@ -58,9 +60,9 @@ void function(){
 
     // Initialize systems
 
-    _registerShader();
-    _initBuffers();
-    _initTextures();
+    _register_shader();
+    _init_buffers();
+    _init_textures();
   };
 
   var _resize = function(){
@@ -79,9 +81,8 @@ void function(){
 
     // Update models matrices
 
-    //mat4.rotate(_cube_model_matrix, _cube_model_matrix, 0.03, [-0.4, -0.3, 0.5]);
+    if (_cube_animated) mat4.rotate(_cube_model_matrix, _cube_model_matrix, 0.03, [-0.4, -0.3, 0.5]);
     mat4.mul(_cube_model_view_matrix, _camera.view_matrix, _cube_model_matrix);
-    _camera.calculate();
     _camera.update();
 
     // Update shaders
@@ -120,7 +121,7 @@ void function(){
 
   // Buffer
 
-  var _initBuffers = function(){
+  var _init_buffers = function(){
     _cube_vertices_buffer = _context.createBuffer();
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_buffer);
     var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
@@ -141,7 +142,7 @@ void function(){
 
   // Textures
 
-  var _initTextures = function() {
+  var _init_textures = function() {
     _cube_texture = _context.createTexture();
     _cube_image = new Image();
     _cube_image.src = "resources/blank.png";
@@ -157,7 +158,7 @@ void function(){
 
   // Shader
 
-  var _registerShader = function(){
+  var _register_shader = function(){
 
     // Vertex shader
 
@@ -198,11 +199,11 @@ void function(){
 
   // Data bindings
 
-  var _updateBackgroundColor = function(color){
+  var _update_background_color = function(color){
     this.params.colors.background = color;
   }
 
-  var _addShader = function(shader){
+  var _add_shader = function(shader){
     _cube_shader = shader;
   }
 
@@ -224,15 +225,16 @@ void function(){
     resize : _resize,
     tick : _tick,
     clear : _clear,
-    addShader : _addShader,
+    add_shader : _add_shader,
 
     // Controls
 
-    updateBackgroundColor : _updateBackgroundColor,
-    resetCamera : function(){ _camera.reset(); },
-    rotateCamera : function(x, y){ _camera.rotate(x, y); },
-    panCamera : function(x, y){ _camera.pan(x, y); },
-    zoomCamera : function(value){ _camera.zoom(value); }
+    update_background_color : _update_background_color,
+    camera_reset : function(){ _camera.reset(); },
+    camera_rotate : function(x, y){ _camera.rotate(x, y); },
+    camera_pan : function(x, y){ _camera.pan(x, y); },
+    camera_zoom : function(value){ _camera.zoom(value); },
+    simulation_switch : function(){ _cube_animated = !_cube_animated; }
   };
 
   application.renderer = renderer;
