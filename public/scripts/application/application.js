@@ -84,9 +84,9 @@ var application = application || (function () {
 
     _gui = new dat.GUI();
     _gui.addColor(controls, "background").onChange(function(value) {
-      if (value[0] === "#") value = application.utilities.hexademicalToRGB(value);
-      value = application.utilities.destructureRGBColor(value);
-      application.renderer.updateBackgroundColor(value);
+      if (value[0] === "#") value = application.utilities.hexademical_to_rgb(value);
+      value = application.utilities.destructure_rgb_color(value);
+      application.renderer.update_background_color(value);
     });
     _gui.add(controls, "clear");
   };
