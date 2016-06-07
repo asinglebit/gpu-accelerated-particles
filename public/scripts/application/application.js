@@ -199,7 +199,7 @@ var application = application || (function () {
         application.renderer.camera_zoom(K_ZOOM * _mouse.dy);
       }
     }
-    
+
     _mouse.dx = 0.0;
     _mouse.dy = 0.0;
   };
