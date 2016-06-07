@@ -75,8 +75,8 @@ var application = application || (function () {
 
     var controls = {
       background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],
-      clear: function() {
-        application.renderer.clear();
+      screenshot: function() {
+        application.renderer.screenshot();
       }
     };
 
@@ -88,7 +88,7 @@ var application = application || (function () {
       value = application.utilities.destructure_rgb_color(value);
       application.renderer.update_background_color(value);
     });
-    _gui.add(controls, "clear");
+    _gui.add(controls, "screenshot");
   };
 
   var _tick = function tick(){
@@ -198,11 +198,8 @@ var application = application || (function () {
       else if (_mouse.buttons[3]) {
         application.renderer.camera_zoom(K_ZOOM * _mouse.dy);
       }
-    } else {
-      if (_mouse.buttons[3]) {
-        application.renderer.camera_pan(K_PAN * _mouse.dx, -K_PAN * _mouse.dy);
-      }
     }
+    
     _mouse.dx = 0.0;
     _mouse.dy = 0.0;
   };

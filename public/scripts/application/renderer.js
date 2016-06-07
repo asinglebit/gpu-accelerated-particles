@@ -40,7 +40,7 @@ void function(){
     // Get context
 
     _canvas = document.getElementById(canvas);
-    _context = _canvas.getContext("experimental-webgl");
+    _context = _canvas.getContext("experimental-webgl", { preserveDrawingBuffer:true });
     _context.enable(_context.DEPTH_TEST);
     _context.depthFunc(_context.LEQUAL);
 
@@ -207,6 +207,13 @@ void function(){
     _cube_shader = shader;
   }
 
+  // Miscellaneous
+
+  var _screenshot = function(){
+    var url = _canvas.toDataURL();
+    window.open(url, "screenshot", "width=" + _canvas.width + " height=" + _canvas.height + " scrollbars=no, resizable=no");
+  }
+
   // Public
 
   var renderer = {
@@ -234,7 +241,11 @@ void function(){
     camera_rotate : function(x, y){ _camera.rotate(x, y); },
     camera_pan : function(x, y){ _camera.pan(x, y); },
     camera_zoom : function(value){ _camera.zoom(value); },
-    simulation_switch : function(){ _cube_animated = !_cube_animated; }
+    simulation_switch : function(){ _cube_animated = !_cube_animated; },
+
+    // Miscellaneous
+
+    screenshot : _screenshot
   };
 
   application.renderer = renderer;
