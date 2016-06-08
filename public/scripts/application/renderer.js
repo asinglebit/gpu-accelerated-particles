@@ -136,8 +136,8 @@ void function(){
   var _init_frame_buffer = function(){
     _rtt_frame_buffer = _context.createFramebuffer();
     _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
-    _rtt_frame_buffer.width = 512;
-    _rtt_frame_buffer.height = 512;
+    _rtt_frame_buffer.width = _width;
+    _rtt_frame_buffer.height = _height;
 
     _rtt_texture = _context.createTexture();
     _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
