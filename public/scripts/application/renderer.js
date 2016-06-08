@@ -20,6 +20,9 @@ void function(){
 
   var _camera = null;
 
+  var _rtt_frame_buffer = null;
+  var _rtt_texture = null;
+
   // TODO: Need to refactor object holding structures
 
   var _cube_vertices_buffer = null;
@@ -63,6 +66,7 @@ void function(){
     _register_shader();
     _init_buffers();
     _init_textures();
+    _init_frame_buffer();
   };
 
   var _resize = function(){
@@ -78,6 +82,10 @@ void function(){
     // Clear background
 
     _clear();
+    _draw_cube();
+  };
+
+  var _draw_cube = function(){
 
     // Update models matrices
 
@@ -110,7 +118,7 @@ void function(){
     // Draw
 
     _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
-  };
+  }
 
   var _clear = function(){
     var background_color = renderer.params.colors.background;
@@ -118,6 +126,34 @@ void function(){
     _context.clearDepth(1.0);
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
+
+  // Frame buffer
+
+  var _init_frame_buffer = function(){
+    _rtt_frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
+    _rtt_frame_buffer.width = 512;
+    _rtt_frame_buffer.height = 512;
+
+    _rtt_texture = _context.createTexture();
+    _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
+    _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _rtt_frame_buffer.width, _rtt_frame_buffer.height, 0, _context.RGBA, _context.UNSIGNED_BYTE, null);
+
+    var renderbuffer = _context.createRenderbuffer();
+    _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
+    _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, _rtt_frame_buffer.width, _rtt_frame_buffer.height);
+
+    _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _rtt_texture, 0);
+    _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
+
+    _context.bindTexture(_context.TEXTURE_2D, null);
+    _context.bindRenderbuffer(_context.RENDERBUFFER, null);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+  }
 
   // Buffer
 
