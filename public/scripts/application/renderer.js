@@ -81,11 +81,15 @@ void function(){
 
     // Clear background
 
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
     _clear();
-    _draw_cube();
+    _draw_cube(_cube_texture);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    _clear();
+    _draw_cube(_rtt_texture);
   };
 
-  var _draw_cube = function(){
+  var _draw_cube = function(texture){
 
     // Update models matrices
 
@@ -102,7 +106,7 @@ void function(){
     _context.bindBuffer(_context.ARRAY_BUFFER, _cube_vertices_normal_buffer);
     _context.vertexAttribPointer(_cube_shader.attributes.aVertexNormal, 3, _context.FLOAT, false, 0, 0);
     _context.activeTexture(_context.TEXTURE0);
-    _context.bindTexture(_context.TEXTURE_2D, _cube_texture);
+    _context.bindTexture(_context.TEXTURE_2D, texture);
     _context.uniform1i(_cube_shader.uniforms.uSampler, 0);
     _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _cube_vertices_index_buffer);
 
