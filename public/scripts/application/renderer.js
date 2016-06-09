@@ -50,9 +50,8 @@ void function(){
 
     // Initialize systems
 
-    _init_textures();
+    _init_textures(_init_objects);
     _init_shaders();
-    _init_objects();
 
     _init_frame_buffer();
   };
@@ -80,7 +79,7 @@ void function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
     _clear();
     for (var i = 0; i < _objects.length; i++) {
-      _objects[i].render(_rtt_texture);
+      _objects[i].render();
     }
   };
 
@@ -121,7 +120,7 @@ void function(){
 
   // Object constructors
 
-  var _cube = function(x, y, z){
+  var _cube = function(x, y, z, texture){
     var cube = {};
 
     cube.vertices_buffer = _context.createBuffer();
@@ -155,7 +154,7 @@ void function(){
 
     // Rendering
 
-    cube.render = function(texture){
+    cube.render = function(_texture){
 
       // Update models matrices
 
@@ -172,7 +171,7 @@ void function(){
       _context.bindBuffer(_context.ARRAY_BUFFER,cube.vertices_normal_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, texture);
+      _context.bindTexture(_context.TEXTURE_2D, _texture || texture);
       _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
       _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.vertices_index_buffer);
 
@@ -195,7 +194,7 @@ void function(){
 
   // Initialize textures
 
-  var _init_textures = function() {
+  var _init_textures = function(callback) {
     for (var i = 0; i < _textures.length; ++i) {
       _textures[i].texture = _context.createTexture();
       var image = new Image();
@@ -208,6 +207,7 @@ void function(){
           _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.LINEAR_MIPMAP_NEAREST);
           _context.generateMipmap(_context.TEXTURE_2D);
           _context.bindTexture(_context.TEXTURE_2D, null);
+          callback();
         };
       }(i, image);
     }
@@ -222,11 +222,11 @@ void function(){
         if (j == 0) ++j;
         for (var k = -4; k < 5; ++k){
           if (k == 0) ++k;
-          _objects.push(_cube(j*3, k*3, i*3));
+          _objects.push(_cube(j*3, k*3, i*3, _textures[0].texture));
         }
       }
     }
-    _objects.push(_cube());
+    _objects.unshift(_cube(0, 0, 0, _rtt_texture));
   }
 
   // Initialize shaders
