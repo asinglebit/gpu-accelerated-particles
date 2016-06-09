@@ -176,13 +176,17 @@ void function(){
   // Initialize objects
 
   var _init_objects = function(){
-    for (var i = 0; i < 6; ++i){
-      for (var j = 0; j < 6; ++j){
-        for (var k = 0; k < 6; ++k){
+    for (var i = -4; i < 5; ++i){
+      if (i == 0) ++i;
+      for (var j = -4; j < 5; ++j){
+        if (j == 0) ++j;
+        for (var k = -4; k < 5; ++k){
+          if (k == 0) ++k;
           _objects.push(_cube(j*3, k*3, i*3));
         }
       }
     }
+    _objects.push(_cube());
   }
 
   // Initialize shaders
