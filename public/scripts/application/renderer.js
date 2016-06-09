@@ -18,6 +18,9 @@ void function(){
   var _width = null;
   var _height = null;
 
+  var _rtt_frame_buffer = null;
+  var _rtt_texture = null;
+
   var _camera = null;
   var _paused = false;
 
@@ -50,6 +53,8 @@ void function(){
     _init_textures();
     _init_shaders();
     _init_objects();
+
+    _init_frame_buffer();
   };
 
   var _resize = function(){
@@ -67,8 +72,15 @@ void function(){
     _clear();
     _camera.update();
 
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
+    _clear();
     for (var i = 0; i < _objects.length; i++) {
-      _objects[i].render();
+      _objects[i].render(_textures[0].texture);
+    }
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    _clear();
+    for (var i = 0; i < _objects.length; i++) {
+      _objects[i].render(_rtt_texture);
     }
   };
 
@@ -78,6 +90,34 @@ void function(){
     _context.clearDepth(1.0);
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
+
+  // Frame buffer
+
+  var _init_frame_buffer = function(){
+    _rtt_frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
+    _rtt_frame_buffer.width = _width;
+    _rtt_frame_buffer.height = _height;
+
+    _rtt_texture = _context.createTexture();
+    _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
+    _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _rtt_frame_buffer.width, _rtt_frame_buffer.height, 0, _context.RGBA, _context.UNSIGNED_BYTE, null);
+
+    var renderbuffer = _context.createRenderbuffer();
+    _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
+    _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, _rtt_frame_buffer.width, _rtt_frame_buffer.height);
+
+    _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _rtt_texture, 0);
+    _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
+
+    _context.bindTexture(_context.TEXTURE_2D, null);
+    _context.bindRenderbuffer(_context.RENDERBUFFER, null);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+  }
 
   // Object constructors
 
@@ -115,7 +155,7 @@ void function(){
 
     // Rendering
 
-    cube.render = function(){
+    cube.render = function(texture){
 
       // Update models matrices
 
@@ -132,7 +172,7 @@ void function(){
       _context.bindBuffer(_context.ARRAY_BUFFER,cube.vertices_normal_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, _textures[0].texture);
+      _context.bindTexture(_context.TEXTURE_2D, texture);
       _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
       _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.vertices_index_buffer);
 
