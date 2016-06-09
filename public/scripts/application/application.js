@@ -127,7 +127,7 @@ var application = application || (function () {
     // Control mode
 
     Mousetrap.bind("space", function() {
-      application.renderer.simulation_switch();
+      application.renderer.pause();
       return false;
     });
   };
