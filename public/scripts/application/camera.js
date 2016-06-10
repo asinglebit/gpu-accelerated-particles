@@ -19,8 +19,8 @@ void function(){
   // Private members
 
   var HOME_VIEW = {
-    YAW_ANGLE : 0.8,
-    PITCH_ANGLE : 0.6,
+    YAW_ANGLE : 0.0,
+    PITCH_ANGLE : 0.0,
     RADIUS : 5
   }
 

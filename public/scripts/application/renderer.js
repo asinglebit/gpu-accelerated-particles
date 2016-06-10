@@ -13,17 +13,18 @@ void function(){
 
   // Private members
 
+  var FRAME_BUFFER_COUNT = 1;
+
   var _canvas = null;
   var _context = null;
   var _width = null;
   var _height = null;
 
-  var _full_screen_quad = null;
-  var _rtt_frame_buffer = null;
-  var _rtt_texture = null;
+  var _paused = false;
 
   var _camera = null;
-  var _paused = false;
+  var _full_screen_quad = null;
+  var _frame_buffers = [];
 
   var _textures = [{ url : "resources/blank.png" }];
   var _shaders = [];
@@ -36,13 +37,14 @@ void function(){
     // Get context
 
     _canvas = document.getElementById(canvas);
-    _context = _canvas.getContext("experimental-webgl", { preserveDrawingBuffer:true });
+    _context = _canvas.getContext("webgl");
+    //_context = WebGLDebugUtils.makeDebugContext(_canvas.getContext("experimental-webgl", { preserveDrawingBuffer:true }));
     _context.enable(_context.DEPTH_TEST);
     _context.depthFunc(_context.LEQUAL);
 
     // Initialize camera
 
-    _camera = new application.constructors.camera(100, 0.1, 100.0, window.innerWidth/window.innerHeight);
+    _camera = new application.constructors.camera(100, 0.1, 100.0, window.innerWidth / window.innerHeight);
 
     // Resize viewport
 
@@ -51,11 +53,15 @@ void function(){
 
     // Initialize systems
 
-    _init_textures(_init_objects);
-    _init_shaders();
+    // TODO: Refactor this, its disgusting
+    _init_textures(function(){
+      _init_objects();
+      renderer.tick = _tick_ready;
+    });
 
-    _init_frame_buffer();
+    _init_frame_buffers();
     _init_full_screen_quad();
+    _init_shaders();
   };
 
   var _resize = function(){
@@ -66,20 +72,17 @@ void function(){
     _camera.update();
   }
 
-  var _tick = function(){
+  var _tick_loading = function(){
+    _clear();
+  };
 
-    // Clear background
-
+  var _tick_ready = function(){
     _clear();
     _camera.update();
-
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[0].frame_buffer);
     _clear();
-    for (var i = 0; i < _objects.length; i++) {
-      _objects[i].render(_textures[0].texture);
-    }
+    for (var i = 0; i < _objects.length; i++) _objects[i].render(_textures[0].texture);
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    _clear();
     _full_screen_quad.render();
   };
 
@@ -93,11 +96,11 @@ void function(){
   // Initialize fullscreen quad
 
   var _init_full_screen_quad = function(){
-    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
-    var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
-    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
-    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    _full_screen_quad = new _object(vertices, indices, normals, uvs);
+    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0];
+    var indices = [0, 1, 2, 0, 2, 3];
+    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0];
+    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    _full_screen_quad = new _object(vertices, indices, null, uvs);
 
     _full_screen_quad.render = function(){
 
@@ -105,58 +108,60 @@ void function(){
 
       _context.useProgram(_shaders[0].program);
       _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aVertexPosition.location, 3, _context.FLOAT, false, 0, 0);
+      _context.vertexAttribPointer(_shaders[0].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
       _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.uv_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aTextureCoord.location, 2, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER,_full_screen_quad.normal_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
+      _context.vertexAttribPointer(_shaders[0].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
-      _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
+      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[0].rtt_texture);
+      _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
       _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
-
-      // Set up transformations
-
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uPMatrix.location, false, _full_screen_quad.model_view_matrix);
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uMVMatrix.location, false, _full_screen_quad.model_view_matrix);
-      var _normal_matrix = mat4.create();
-      mat4.invert(_normal_matrix, _full_screen_quad.model_view_matrix);
-      mat4.transpose(_normal_matrix, _normal_matrix);
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uNormalMatrix.location, false, new Float32Array(_normal_matrix));
 
       // Draw
 
-      _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
+      _context.drawElements(_context.TRIANGLES, 6, _context.UNSIGNED_SHORT, 0);
       _context.bindBuffer(_context.ARRAY_BUFFER, null);
     }
   }
 
   // Initialize frame buffer
 
-  var _init_frame_buffer = function(){
-    _rtt_frame_buffer = _context.createFramebuffer();
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _rtt_frame_buffer);
-    _rtt_frame_buffer.width = _width;
-    _rtt_frame_buffer.height = _height;
-
-    _rtt_texture = _context.createTexture();
-    _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
-    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
-    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
-    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
-    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
-    _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _rtt_frame_buffer.width, _rtt_frame_buffer.height, 0, _context.RGBA, _context.UNSIGNED_BYTE, null);
-
-    var renderbuffer = _context.createRenderbuffer();
-    _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
-    _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, _rtt_frame_buffer.width, _rtt_frame_buffer.height);
-
-    _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _rtt_texture, 0);
-    _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
-
-    _context.bindTexture(_context.TEXTURE_2D, null);
-    _context.bindRenderbuffer(_context.RENDERBUFFER, null);
+  var _delete_frame_buffers = function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    for (var i = 0; i < _frame_buffers.length; ++i){
+      _context.deleteTexture(_frame_buffers[i].rtt_texture);
+      _context.deleteFramebuffer(_frame_buffers[i].frame_buffer);
+    }
+  }
+
+  var _init_frame_buffers = function(){
+    for (var i = 0; i < FRAME_BUFFER_COUNT; ++i){
+      _frame_buffers.push({
+        frame_buffer : _context.createFramebuffer(),
+        rtt_texture : _context.createTexture()
+      });
+
+      _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[i].frame_buffer);
+      _frame_buffers[i].frame_buffer.width = _width;
+      _frame_buffers[i].frame_buffer.height = _height;
+
+      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[i].rtt_texture);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
+      _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _frame_buffers[i].frame_buffer.width, _frame_buffers[i].frame_buffer.height, 0, _context.RGBA, _context.UNSIGNED_BYTE, null);
+
+      var renderbuffer = _context.createRenderbuffer();
+      _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
+      _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, _frame_buffers[i].frame_buffer.width, _frame_buffers[i].frame_buffer.height);
+
+      _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _frame_buffers[i].rtt_texture, 0);
+      _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
+
+      _context.bindTexture(_context.TEXTURE_2D, null);
+      _context.bindRenderbuffer(_context.RENDERBUFFER, null);
+      _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    }
   }
 
   // Initialize object constructors
@@ -213,26 +218,26 @@ void function(){
 
       // Update shaders
 
-      _context.useProgram(_shaders[0].program);
+      _context.useProgram(_shaders[1].program);
       _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertex_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aVertexPosition.location, 3, _context.FLOAT, false, 0, 0);
+      _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
       _context.bindBuffer(_context.ARRAY_BUFFER, cube.uv_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aTextureCoord.location, 2, _context.FLOAT, false, 0, 0);
+      _context.vertexAttribPointer(_shaders[1].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
       _context.bindBuffer(_context.ARRAY_BUFFER, cube.normal_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
+      _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_normal.location, 3, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
       _context.bindTexture(_context.TEXTURE_2D, _texture || texture);
-      _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
+      _context.uniform1i(_shaders[1].uniforms.u_sampler.location, 0);
       _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.index_buffer);
 
       // Set up transformations
 
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uPMatrix.location, false, _camera.projection_matrix);
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uMVMatrix.location, false, cube.model_view_matrix);
+      _context.uniformMatrix4fv(_shaders[1].uniforms.u_projection_matrix.location, false, _camera.projection_matrix);
+      _context.uniformMatrix4fv(_shaders[1].uniforms.u_model_view_matrix.location, false, cube.model_view_matrix);
       var _normal_matrix = mat4.create();
       mat4.invert(_normal_matrix, cube.model_view_matrix);
       mat4.transpose(_normal_matrix, _normal_matrix);
-      _context.uniformMatrix4fv(_shaders[0].uniforms.uNormalMatrix.location, false, new Float32Array(_normal_matrix));
+      _context.uniformMatrix4fv(_shaders[1].uniforms.u_normal_matrix.location, false, new Float32Array(_normal_matrix));
 
       // Draw
 
@@ -277,7 +282,7 @@ void function(){
         }
       }
     }
-    _objects.unshift(_cube(0, 0, 0, _rtt_texture));
+    _objects.unshift(_cube(0, 0, 0, _frame_buffers[0].rtt_texture));
   }
 
   // Initialize shaders
@@ -300,6 +305,10 @@ void function(){
       _context.attachShader(_shaders[i].program, vertexShader);
       _context.attachShader(_shaders[i].program, fragmentShader);
       _context.linkProgram(_shaders[i].program);
+      _context.detachShader(_shaders[i].program, vertexShader);
+      _context.detachShader(_shaders[i].program, fragmentShader);
+      _context.deleteShader(vertexShader);
+      _context.deleteShader(fragmentShader);
 
       // Bind attributes and uniforms
 
@@ -346,7 +355,7 @@ void function(){
 
     initialize : _initialize,
     resize : _resize,
-    tick : _tick,
+    tick : _tick_loading,
     clear : _clear,
     add_shader : _add_shader,
 

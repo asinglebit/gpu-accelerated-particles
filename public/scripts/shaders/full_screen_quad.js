@@ -18,28 +18,28 @@ void function(){
   var shader = {
     name : 'full_screen_quad',
     vertexSource : `
-    attribute vec2 aVertexPosition;
-    varying vec2 vTexCoords;
-    const vec2 scale = vec2(0.5, 0.5);
-    void main()
-    {
-        vTexCoords  = aVertexPosition * scale + scale;
-        gl_Position = vec4(aVertexPosition, 0.0, 1.0);
+    attribute highp vec3 a_vertex_position;
+    attribute highp vec2 a_uv;
+    varying highp vec2 v_uv;
+    void main(void) {
+      gl_Position = vec4(a_vertex_position, 1.0);
+      v_uv = a_uv;
     }
     `,
     fragmentSource : `
-    uniform sampler2D uSampler;
-    varying vec2 vTexCoords;
-    void main()
-    {
-        gl_FragColor = texture2D(uSampler, vTexCoords);
+    varying highp vec2 v_uv;
+    uniform sampler2D u_sampler;
+    void main(void) {
+      highp vec4 texelColor = texture2D(u_sampler, vec2(v_uv.s, v_uv.t));
+      gl_FragColor = vec4(texelColor.r*0.9, texelColor.r*0.3, texelColor.r*0.3, texelColor.a);
     }
     `,
     attributes: {
-      aVertexPosition : {}
+      a_vertex_position : {},
+      a_uv : {}
     },
     uniforms: {
-      uSampler : { value : null}
+      u_sampler : { value : null}
     }
   };
 

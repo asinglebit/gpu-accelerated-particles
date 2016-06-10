@@ -14,5 +14,5 @@ void function(){
   document.addEventListener("DOMContentLoaded", function(event) {
     application.initialize('viewport');
   });
-  
+
 }();
