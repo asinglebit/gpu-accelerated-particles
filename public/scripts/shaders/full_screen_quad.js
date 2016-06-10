@@ -19,11 +19,11 @@ void function(){
     name : 'full_screen_quad',
     vertexSource : `
     attribute highp vec3 a_vertex_position;
-    attribute highp vec2 a_uv;
     varying highp vec2 v_uv;
+    const vec2 scale = vec2(0.5, 0.5);
     void main(void) {
       gl_Position = vec4(a_vertex_position, 1.0);
-      v_uv = a_uv;
+      v_uv = a_vertex_position.xy * scale + scale;
     }
     `,
     fragmentSource : `
@@ -35,8 +35,7 @@ void function(){
     }
     `,
     attributes: {
-      a_vertex_position : {},
-      a_uv : {}
+      a_vertex_position : {}
     },
     uniforms: {
       u_sampler : { value : null}

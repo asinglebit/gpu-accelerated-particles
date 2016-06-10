@@ -70,6 +70,8 @@ void function(){
     _context.viewport(0, 0, _width, _height);
     _camera.aspect = _width/_height;
     _camera.update();
+    _delete_frame_buffers();
+    _init_frame_buffers();
   }
 
   var _tick_loading = function(){
@@ -98,9 +100,7 @@ void function(){
   var _init_full_screen_quad = function(){
     var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0];
     var indices = [0, 1, 2, 0, 2, 3];
-    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0];
-    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    _full_screen_quad = new _object(vertices, indices, null, uvs);
+    _full_screen_quad = new _object(vertices, indices, null, null);
 
     _full_screen_quad.render = function(){
 
@@ -109,8 +109,6 @@ void function(){
       _context.useProgram(_shaders[0].program);
       _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.uv_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
       _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[0].rtt_texture);
       _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
@@ -134,6 +132,7 @@ void function(){
   }
 
   var _init_frame_buffers = function(){
+    _frame_buffers.length = 0;
     for (var i = 0; i < FRAME_BUFFER_COUNT; ++i){
       _frame_buffers.push({
         frame_buffer : _context.createFramebuffer(),
