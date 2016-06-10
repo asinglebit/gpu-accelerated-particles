@@ -26,7 +26,7 @@ void function(){
   var _full_screen_quad = null;
   var _frame_buffers = [];
 
-  var _textures = [{ url : "resources/blank.png" }];
+  var _textures = [{ url : "resources/blank.jpg" }];
   var _shaders = [];
   var _objects = [];
 
@@ -50,13 +50,14 @@ void function(){
 
     _resize();
     _clear();
+    _loading();
 
     // Initialize systems
 
     // TODO: Refactor this, its disgusting
     _init_textures(function(){
       _init_objects();
-      renderer.tick = _tick_ready;
+      _loading_complete();
     });
 
     _init_frame_buffers();
@@ -72,6 +73,14 @@ void function(){
     _camera.update();
     _delete_frame_buffers();
     _init_frame_buffers();
+  }
+
+  var _loading = function(){
+    renderer.tick = _tick_loading;
+  }
+
+  var _loading_complete = function(){
+    renderer.tick = _tick_ready;
   }
 
   var _tick_loading = function(){
@@ -192,7 +201,7 @@ void function(){
     this.render = function(){};
   }
 
-  var _cube = function(x, y, z, texture){
+  var _cube = function(tx, ty, tz, sx, sy, sz, texture){
     var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
     var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
     var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
@@ -201,10 +210,10 @@ void function(){
 
     // Initialize matrices
 
-    if (x && y && z){
-      mat4.translate(cube.model_matrix, cube.model_matrix, [x, y, z]);
-      mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
-    }
+    mat4.translate(cube.model_matrix, cube.model_matrix, [tx, ty, tz]);
+    mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
+    mat4.scale(cube.model_matrix, cube.model_matrix, [sx, sy, sz]);
+    mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
 
     // Rendering
 
@@ -271,17 +280,17 @@ void function(){
   // Initialize objects
 
   var _init_objects = function(){
-    for (var i = -4; i < 5; ++i){
+    for (var i = -6; i < 7; ++i){
       if (i == 0) ++i;
-      for (var j = -4; j < 5; ++j){
+      for (var j = -6; j < 7; ++j){
         if (j == 0) ++j;
-        for (var k = -4; k < 5; ++k){
+        for (var k = -6; k < 7; ++k){
           if (k == 0) ++k;
-          _objects.push(_cube(j*3, k*3, i*3, _textures[0].texture));
+          _objects.push(_cube(j*3, k*3, i*3, 1/j, 1/k, 1/i, _textures[0].texture));
         }
       }
     }
-    _objects.unshift(_cube(0, 0, 0, _frame_buffers[0].rtt_texture));
+    _objects.unshift(_cube(0, 0, 0, 1, 1, 1, _frame_buffers[0].rtt_texture));
   }
 
   // Initialize shaders

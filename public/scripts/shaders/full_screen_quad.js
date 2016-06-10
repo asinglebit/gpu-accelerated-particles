@@ -31,7 +31,7 @@ void function(){
     uniform sampler2D u_sampler;
     void main(void) {
       highp vec4 texelColor = texture2D(u_sampler, vec2(v_uv.s, v_uv.t));
-      gl_FragColor = vec4(texelColor.r*0.9, texelColor.r*0.3, texelColor.r*0.3, texelColor.a);
+      gl_FragColor = vec4(texelColor.rgba);
     }
     `,
     attributes: {

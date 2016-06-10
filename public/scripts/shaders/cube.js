@@ -30,7 +30,7 @@ void function(){
       gl_Position = u_projection_matrix * u_model_view_matrix * vec4(a_vertex_position, 1.0);
       v_uv = a_uv;
       highp vec3 ambient_light_color = vec3(0.6, 0.6, 0.6);
-      highp vec3 directional_light_color = vec3(0.5, 0.5, 0.75);
+      highp vec3 directional_light_color = vec3(0.3, 0.3, 0.3);
       highp vec3 directional_light_vector = vec3(0.85, 0.8, 0.75);
       highp vec4 transformed_normal = u_normal_matrix * vec4(a_vertex_normal, 1.0);
       highp float directional = max(dot(transformed_normal.xyz, directional_light_vector), 0.0);

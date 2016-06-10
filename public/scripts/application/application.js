@@ -44,7 +44,7 @@ var application = application || (function () {
 
     // Initialize
 
-    _initialize_gui();
+    //_initialize_gui();
     _mouse_init();
     _keyboard_init();
     _tick();
