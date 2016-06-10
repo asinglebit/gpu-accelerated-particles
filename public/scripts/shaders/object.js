@@ -1,4 +1,4 @@
-// Simple shader
+// Object shader
 
 void function(){
 
@@ -16,7 +16,7 @@ void function(){
   };
 
   var shader = {
-    name : 'sample',
+    name : 'object',
     vertexSource : `
     attribute highp vec3 aVertexNormal;
     attribute highp vec3 aVertexPosition;

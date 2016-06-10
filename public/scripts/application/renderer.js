@@ -18,6 +18,7 @@ void function(){
   var _width = null;
   var _height = null;
 
+  var _full_screen_quad = null;
   var _rtt_frame_buffer = null;
   var _rtt_texture = null;
 
@@ -54,6 +55,7 @@ void function(){
     _init_shaders();
 
     _init_frame_buffer();
+    _init_full_screen_quad();
   };
 
   var _resize = function(){
@@ -78,9 +80,7 @@ void function(){
     }
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
     _clear();
-    for (var i = 0; i < _objects.length; i++) {
-      _objects[i].render();
-    }
+    _full_screen_quad.render();
   };
 
   var _clear = function(){
@@ -90,7 +90,48 @@ void function(){
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
 
-  // Frame buffer
+  // Initialize fullscreen quad
+
+  var _init_full_screen_quad = function(){
+    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
+    var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
+    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    _full_screen_quad = new _object(vertices, indices, normals, uvs);
+
+    _full_screen_quad.render = function(){
+
+      // Update shaders
+
+      _context.useProgram(_shaders[0].program);
+      _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
+      _context.vertexAttribPointer(_shaders[0].attributes.aVertexPosition.location, 3, _context.FLOAT, false, 0, 0);
+      _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.uv_buffer);
+      _context.vertexAttribPointer(_shaders[0].attributes.aTextureCoord.location, 2, _context.FLOAT, false, 0, 0);
+      _context.bindBuffer(_context.ARRAY_BUFFER,_full_screen_quad.normal_buffer);
+      _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
+      _context.activeTexture(_context.TEXTURE0);
+      _context.bindTexture(_context.TEXTURE_2D, _rtt_texture);
+      _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
+      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
+
+      // Set up transformations
+
+      _context.uniformMatrix4fv(_shaders[0].uniforms.uPMatrix.location, false, _full_screen_quad.model_view_matrix);
+      _context.uniformMatrix4fv(_shaders[0].uniforms.uMVMatrix.location, false, _full_screen_quad.model_view_matrix);
+      var _normal_matrix = mat4.create();
+      mat4.invert(_normal_matrix, _full_screen_quad.model_view_matrix);
+      mat4.transpose(_normal_matrix, _normal_matrix);
+      _context.uniformMatrix4fv(_shaders[0].uniforms.uNormalMatrix.location, false, new Float32Array(_normal_matrix));
+
+      // Draw
+
+      _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
+      _context.bindBuffer(_context.ARRAY_BUFFER, null);
+    }
+  }
+
+  // Initialize frame buffer
 
   var _init_frame_buffer = function(){
     _rtt_frame_buffer = _context.createFramebuffer();
@@ -118,35 +159,44 @@ void function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
   }
 
-  // Object constructors
+  // Initialize object constructors
+
+  var _object = function(vertices, indices, normals, uvs){
+    if (vertices){
+      this.vertex_buffer = _context.createBuffer();
+      _context.bindBuffer(_context.ARRAY_BUFFER, this.vertex_buffer);
+      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
+    }
+    if (indices){
+      this.index_buffer = _context.createBuffer();
+      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, this.index_buffer);
+      _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), _context.STATIC_DRAW);
+    }
+    if (normals){
+      this.normal_buffer = _context.createBuffer();
+      _context.bindBuffer(_context.ARRAY_BUFFER, this.normal_buffer);
+      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(normals), _context.STATIC_DRAW);
+    }
+    if (uvs){
+      this.uv_buffer = _context.createBuffer();
+      _context.bindBuffer(_context.ARRAY_BUFFER, this.uv_buffer);
+      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(uvs), _context.STATIC_DRAW);
+    }
+
+    this.model_matrix = mat4.create();
+    this.model_view_matrix = mat4.create();
+    this.render = function(){};
+  }
 
   var _cube = function(x, y, z, texture){
-    var cube = {};
-
-    cube.vertices_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertices_buffer);
     var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
-
-    cube.vertices_normal_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertices_normal_buffer);
-    var vertexNormals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertexNormals), _context.STATIC_DRAW);
-
-    cube.vertices_texture_coord_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertices_texture_coord_buffer);
-    var textureCoordinates = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(textureCoordinates), _context.STATIC_DRAW);
-
-    cube.vertices_index_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.vertices_index_buffer);
-    var cubeVertexIndices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
-    _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), _context.STATIC_DRAW);
+    var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
+    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    var cube = new _object(vertices, indices, normals, uvs);
 
     // Initialize matrices
 
-    cube.model_matrix = mat4.create();
-    cube.model_view_matrix = mat4.create();
     if (x && y && z){
       mat4.translate(cube.model_matrix, cube.model_matrix, [x, y, z]);
       mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
@@ -164,16 +214,16 @@ void function(){
       // Update shaders
 
       _context.useProgram(_shaders[0].program);
-      _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertices_buffer);
+      _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertex_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.aVertexPosition.location, 3, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertices_texture_coord_buffer);
+      _context.bindBuffer(_context.ARRAY_BUFFER, cube.uv_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.aTextureCoord.location, 2, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER,cube.vertices_normal_buffer);
+      _context.bindBuffer(_context.ARRAY_BUFFER, cube.normal_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.aVertexNormal.location, 3, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
       _context.bindTexture(_context.TEXTURE_2D, _texture || texture);
       _context.uniform1i(_shaders[0].uniforms.uSampler.location, 0);
-      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.vertices_index_buffer);
+      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.index_buffer);
 
       // Set up transformations
 
@@ -187,6 +237,7 @@ void function(){
       // Draw
 
       _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
+      _context.bindBuffer(_context.ARRAY_BUFFER, null);
     }
 
     return cube;
