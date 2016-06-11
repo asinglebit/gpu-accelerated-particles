@@ -260,7 +260,7 @@ void function(){
   var _delete_frame_buffers = function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
     for (var i = 0; i < _frame_buffers.length; ++i){
-      for (var j = 0; j < _frame_buffers.textures.length; ++j){
+      for (var j = 0; j < _frame_buffers[i].textures.length; ++j){
         _context.deleteTexture(_frame_buffers[i].textures[j]);
       }
       _context.deleteFramebuffer(_frame_buffers[i].frame_buffer);
