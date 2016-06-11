@@ -13,7 +13,7 @@ var application = application || (function () {
 
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
-  var _control_cam = false;
+  var _control_cam = true;
 
   var _initialize = function(canvas){
 
