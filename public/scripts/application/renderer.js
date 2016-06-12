@@ -14,7 +14,7 @@ void function(){
   // Private members
 
   var FRAME_BUFFER_COUNT = 1;
-  var TEXTURES_PER_FRAME_BUFFER_COUNT = 3;
+  var TEXTURES_PER_FRAME_BUFFER_COUNT = 1;
 
   var _canvas = null;
   var _context = null;
@@ -59,12 +59,11 @@ void function(){
     // Initialize systems
 
     // TODO: Refactor this, its disgusting
-    /*_init_textures(function(){
+    _init_textures(function(){
       _init_objects();
       _loading_complete();
-    });*/
+    });
 
-    _loading_complete();
     _init_frame_buffers();
     _init_full_screen_quad();
     _init_shaders();
@@ -96,10 +95,10 @@ void function(){
     _clear();
     _camera.update();
     _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[0].frame_buffer);
-    /*_clear();
+    _clear();
     for (var i = 0; i < _objects.length; i++) _objects[i].render(_textures[0].texture);
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    _full_screen_quad.render();*/
+    _full_screen_quad.render();
   };
 
   var _clear = function(){
