@@ -13,8 +13,7 @@ void function(){
 
   // Private members
 
-  var FRAME_BUFFER_COUNT = 1;
-  var TEXTURES_PER_FRAME_BUFFER_COUNT = 3;
+  var PARTICLE_COUNT = 1024 * 1024;
 
   var _canvas = null;
   var _context = null;
@@ -26,11 +25,12 @@ void function(){
 
   var _camera = null;
   var _full_screen_quad = null;
+  var _full_screen_quad_frame_buffer = [];
   var _frame_buffers = [];
-
-  var _textures = [{ url : "resources/blank.jpg" }];
   var _shaders = [];
-  var _objects = [];
+
+  var _particle_pos = [];
+  var _particle_uv = [];
 
   // Private methods
 
@@ -58,16 +58,13 @@ void function(){
 
     // Initialize systems
 
-    // TODO: Refactor this, its disgusting
-    /*_init_textures(function(){
-      _init_objects();
-      _loading_complete();
-    });*/
-
-    _loading_complete();
-    _init_frame_buffers();
+    _frame_buffers = _init_frame_buffers(1, 1);
+    _full_screen_quad_frame_buffer = _init_frame_buffers(1, 1);
     _init_full_screen_quad();
     _init_shaders();
+    _generate_particle_uv_data();
+    _init_particles();
+    _loading_complete();
   };
 
   var _resize = function(){
@@ -76,8 +73,8 @@ void function(){
     _context.viewport(0, 0, _width, _height);
     _camera.aspect = _width/_height;
     _camera.update();
-    _delete_frame_buffers();
-    _init_frame_buffers();
+    _delete_frame_buffers(_frame_buffers);
+    _frame_buffers = _init_frame_buffers(1, 1);
   }
 
   var _loading = function(){
@@ -95,11 +92,8 @@ void function(){
   var _tick_ready = function(){
     _clear();
     _camera.update();
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[0].frame_buffer);
-    /*_clear();
-    for (var i = 0; i < _objects.length; i++) _objects[i].render(_textures[0].texture);
-    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    _full_screen_quad.render();*/
+    _draw_particles();
+    //_full_screen_quad.render();
   };
 
   var _clear = function(){
@@ -111,197 +105,128 @@ void function(){
 
   // Initialize objects
 
-  var _object = function(vertices, indices, normals, uvs){
-    if (vertices){
-      this.vertex_buffer = _context.createBuffer();
-      _context.bindBuffer(_context.ARRAY_BUFFER, this.vertex_buffer);
-      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(vertices), _context.STATIC_DRAW);
+  var _generate_particle_uv_data = function(){
+    var particle_uv = [];
+    for (var y=0; y<1024; ++y) {
+      for (var x=0; x<1024; ++x) {
+        particle_uv.push(x/1024);
+        particle_uv.push(y/1024);
+      }
     }
-    if (indices){
-      this.index_buffer = _context.createBuffer();
-      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, this.index_buffer);
-      _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), _context.STATIC_DRAW);
-    }
-    if (normals){
-      this.normal_buffer = _context.createBuffer();
-      _context.bindBuffer(_context.ARRAY_BUFFER, this.normal_buffer);
-      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(normals), _context.STATIC_DRAW);
-    }
-    if (uvs){
-      this.uv_buffer = _context.createBuffer();
-      _context.bindBuffer(_context.ARRAY_BUFFER, this.uv_buffer);
-      _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(uvs), _context.STATIC_DRAW);
-    }
+    _particle_uv = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _particle_uv);
+    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(particle_uv), _context.STATIC_DRAW);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+  }
 
-    this.model_matrix = mat4.create();
-    this.model_view_matrix = mat4.create();
-    this.render = function(){};
+  var _init_particles = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[0].frame_buffer);
+    _context.viewport(0, 0, 1024, 1024);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.blendFunc(_context.ONE, _context.ZERO);
+    _context.useProgram(_shaders[1].program);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
+    _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
+    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
+    _context.drawElements(_context.TRIANGLES, 6, _context.UNSIGNED_SHORT, 0);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+  }
+
+  var _draw_particles = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    _context.viewport(0, 0, _width, _height);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.blendFunc(_context.SRC_ALPHA, _context.ONE);
+    _context.useProgram(_shaders[2].program);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _particle_uv);
+    _context.vertexAttribPointer(_shaders[2].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
+    _context.activeTexture(_context.TEXTURE0);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[0].textures[0]);
+    _context.uniform1i(_shaders[2].uniforms.u_sampler.location, 0);
+    _context.uniformMatrix4fv(_shaders[2].uniforms.u_projection_matrix.location, false, _camera.projection_matrix);
+    _context.uniformMatrix4fv(_shaders[2].uniforms.u_model_view_matrix.location, false, _camera.view_matrix);
+    _context.drawArrays(_context.POINTS, 0, PARTICLE_COUNT);
+    _context.bindTexture(_context.TEXTURE_2D, null);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
   }
 
   var _init_full_screen_quad = function(){
-    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0];
-    var indices = [0, 1, 2, 0, 2, 3];
-    _full_screen_quad = new _object(vertices, indices, null, null);
+    _full_screen_quad = {};
+    _full_screen_quad.vertex_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
+    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), _context.STATIC_DRAW);
+    _full_screen_quad.index_buffer = _context.createBuffer();
+    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
+    _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), _context.STATIC_DRAW);
+
+    _full_screen_quad.model_matrix = mat4.create();
+    _full_screen_quad.model_view_matrix = mat4.create();
 
     _full_screen_quad.render = function(){
-
-      // Update shaders
-
+      _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+      _context.viewport(0, 0, _width, _height);
       _context.useProgram(_shaders[0].program);
       _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
       _context.vertexAttribPointer(_shaders[0].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
       _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[0].textures[0]);
+      _context.bindTexture(_context.TEXTURE_2D, _full_screen_quad_frame_buffer[0].textures[0]);
       _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
       _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
-
-      // Draw
-
       _context.drawElements(_context.TRIANGLES, 6, _context.UNSIGNED_SHORT, 0);
       _context.bindBuffer(_context.ARRAY_BUFFER, null);
     }
   }
 
-  var _cube = function(tx, ty, tz, sx, sy, sz, texture){
-    var vertices = [-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0];
-    var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
-    var normals = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0];
-    var uvs = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    var cube = new _object(vertices, indices, normals, uvs);
-
-    // Initialize matrices
-
-    mat4.translate(cube.model_matrix, cube.model_matrix, [tx, ty, tz]);
-    mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
-    mat4.scale(cube.model_matrix, cube.model_matrix, [sx, sy, sz]);
-    mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
-
-    // Rendering
-
-    cube.render = function(_texture){
-
-      // Update models matrices
-
-      if (_paused) mat4.rotate(cube.model_matrix, cube.model_matrix, 0.03, [-0.4, -0.3, 0.5]);
-      mat4.mul(cube.model_view_matrix, _camera.view_matrix, cube.model_matrix);
-
-      // Update shaders
-
-      _context.useProgram(_shaders[1].program);
-      _context.bindBuffer(_context.ARRAY_BUFFER, cube.vertex_buffer);
-      _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, cube.uv_buffer);
-      _context.vertexAttribPointer(_shaders[1].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, cube.normal_buffer);
-      _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_normal.location, 3, _context.FLOAT, false, 0, 0);
-      _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, _texture || texture);
-      _context.uniform1i(_shaders[1].uniforms.u_sampler.location, 0);
-      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, cube.index_buffer);
-
-      // Set up transformations
-
-      _context.uniformMatrix4fv(_shaders[1].uniforms.u_projection_matrix.location, false, _camera.projection_matrix);
-      _context.uniformMatrix4fv(_shaders[1].uniforms.u_model_view_matrix.location, false, cube.model_view_matrix);
-      var _normal_matrix = mat4.create();
-      mat4.invert(_normal_matrix, cube.model_view_matrix);
-      mat4.transpose(_normal_matrix, _normal_matrix);
-      _context.uniformMatrix4fv(_shaders[1].uniforms.u_normal_matrix.location, false, new Float32Array(_normal_matrix));
-
-      // Draw
-
-      _context.drawElements(_context.TRIANGLES, 36, _context.UNSIGNED_SHORT, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, null);
-    }
-
-    return cube;
-  }
-
   // Initialize frame buffer
 
-  var _init_frame_buffers = function(){
-    _frame_buffers.length = 0;
-    for (var i = 0; i < FRAME_BUFFER_COUNT; ++i){
-      _frame_buffers.push({
+  var _init_frame_buffers = function(frame_buffer_count, textures_per_frame_buffer_count){
+    var frame_buffer_holder = [];
+    for (var i = 0; i < frame_buffer_count; ++i){
+      frame_buffer_holder.push({
         frame_buffer : _context.createFramebuffer(),
         textures : []
       });
 
-      _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[i].frame_buffer);
-      _frame_buffers[i].frame_buffer.width = _width;
-      _frame_buffers[i].frame_buffer.height = _height;
+      _context.bindFramebuffer(_context.FRAMEBUFFER, frame_buffer_holder[i].frame_buffer);
+      frame_buffer_holder[i].frame_buffer.width = _width;
+      frame_buffer_holder[i].frame_buffer.height = _height;
 
       var multiple_textures = [];
-      for (var j = 0; j < TEXTURES_PER_FRAME_BUFFER_COUNT; ++j){
-        _frame_buffers[i].textures[j] = _context.createTexture();
-        _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[i].textures[j]);
+      for (var j = 0; j < textures_per_frame_buffer_count; ++j){
+        frame_buffer_holder[i].textures[j] = _context.createTexture();
+        _context.bindTexture(_context.TEXTURE_2D, frame_buffer_holder[i].textures[j]);
         _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
         _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
         _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
         _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
-        _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _frame_buffers[i].frame_buffer.width, _frame_buffers[i].frame_buffer.height, 0, _context.RGBA, _context.FLOAT, null);
+        _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, frame_buffer_holder[i].frame_buffer.width, frame_buffer_holder[i].frame_buffer.height, 0, _context.RGBA, _context.FLOAT, null);
         _context.bindTexture(_context.TEXTURE_2D, null);
-        _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _frame_buffers[i].textures[j], 0);
+        _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, frame_buffer_holder[i].textures[j], 0);
         multiple_textures.push(_extensions[1].extension['COLOR_ATTACHMENT' + j + '_WEBGL'])
       }
       _extensions[1].extension.drawBuffersWEBGL(multiple_textures);
 
       var renderbuffer = _context.createRenderbuffer();
       _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
-      _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, _frame_buffers[i].frame_buffer.width, _frame_buffers[i].frame_buffer.height);
+      _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, frame_buffer_holder[i].frame_buffer.width, frame_buffer_holder[i].frame_buffer.height);
       _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
 
       _context.bindTexture(_context.TEXTURE_2D, null);
       _context.bindRenderbuffer(_context.RENDERBUFFER, null);
       _context.bindFramebuffer(_context.FRAMEBUFFER, null);
     }
+
+    return frame_buffer_holder;
   }
 
-  var _delete_frame_buffers = function(){
+  var _delete_frame_buffers = function(frame_buffer_holder){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    for (var i = 0; i < _frame_buffers.length; ++i){
-      for (var j = 0; j < _frame_buffers[i].textures.length; ++j){
-        _context.deleteTexture(_frame_buffers[i].textures[j]);
+    for (var i = 0; i < frame_buffer_holder.length; ++i){
+      for (var j = 0; j < frame_buffer_holder[i].textures.length; ++j){
+        _context.deleteTexture(frame_buffer_holder[i].textures[j]);
       }
-      _context.deleteFramebuffer(_frame_buffers[i].frame_buffer);
+      _context.deleteFramebuffer(frame_buffer_holder[i].frame_buffer);
     }
-  }
-
-  // Initialize textures
-
-  var _init_textures = function(callback) {
-    for (var i = 0; i < _textures.length; ++i) {
-      _textures[i].texture = _context.createTexture();
-      var image = new Image();
-      image.src = _textures[i].url;
-      void function(_i, _image){
-        image.onload = function() {
-          _context.bindTexture(_context.TEXTURE_2D, _textures[_i].texture);
-          _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _context.RGBA, _context.UNSIGNED_BYTE, _image);
-          _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.LINEAR);
-          _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.LINEAR_MIPMAP_NEAREST);
-          _context.generateMipmap(_context.TEXTURE_2D);
-          _context.bindTexture(_context.TEXTURE_2D, null);
-          callback();
-        };
-      }(i, image);
-    }
-  };
-
-  // Initialize objects
-
-  var _init_objects = function(){
-    for (var i = -6; i < 7; ++i){
-      if (i == 0) ++i;
-      for (var j = -6; j < 7; ++j){
-        if (j == 0) ++j;
-        for (var k = -6; k < 7; ++k){
-          if (k == 0) ++k;
-          _objects.push(_cube(j*3, k*3, i*3, 1/j, 1/k, 1/i, _textures[0].texture));
-        }
-      }
-    }
-    _objects.unshift(_cube(0, 0, 0, 1, 1, 1, _frame_buffers[0].textures[0]));
   }
 
   // Initialize shaders

@@ -27,6 +27,8 @@ void function(){
     varying highp vec2 v_uv;
     varying highp vec3 v_lighting;
     void main(void) {
+
+        gl_PointSize = 5.0;
       gl_Position = u_projection_matrix * u_model_view_matrix * vec4(a_vertex_position, 1.0);
       v_uv = a_uv;
       highp vec3 ambient_light_color = vec3(0.6, 0.6, 0.6);
