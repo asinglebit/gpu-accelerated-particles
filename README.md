@@ -4,6 +4,5 @@ This is a project I am working on in my spare time. Mainly for fun, research and
 
 TODO:
 
-1. Add a velocities buffer and duplicate positions and velocities buffers.
-2. Compute positions and velocities in fragment shaders.
-3. Introduce buffer swapping mechanism
+1. Introduce gravity concept
+2. Add mouse position bound gravity
