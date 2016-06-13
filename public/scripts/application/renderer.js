@@ -103,7 +103,7 @@ void function(){
   var _tick_ready = function(){
     _clear();
     _camera.update();
-    _move_particles();
+    if (!_paused) _move_particles();
     _draw_particles();
     _draw_full_screen_quad();
   };
