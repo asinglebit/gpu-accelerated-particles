@@ -38,7 +38,7 @@ void function(){
       a_vertex_position : {}
     },
     uniforms: {
-      u_sampler : { value : null}
+      u_sampler : {}
     }
   };
 

@@ -16,31 +16,34 @@ void function(){
   };
 
   var shader = {
-    name : 'full_screen_quad',
+    name : 'particles_draw',
     vertexSource : `
     precision highp float;
     attribute vec2 a_uv;
-    uniform highp mat4 u_model_view_matrix;
-    uniform highp mat4 u_projection_matrix;
-    uniform sampler2D u_sampler;
+    uniform mat4 u_view_projection_matrix;
+    uniform sampler2D u_sampler_0;
+    varying vec4 v_color;
+
     void main() {
       gl_PointSize = 2.0;
-      gl_Position = u_model_view_matrix * u_projection_matrix * texture2D(u_sampler, a_uv);
+      v_color = vec4(0.9, 0.4, 0.2, 0.4);
+      gl_Position = u_view_projection_matrix * texture2D(u_sampler_0, a_uv);
     }
     `,
     fragmentSource : `
     precision highp float;
+    varying vec4 v_color;
+
     void main() {
-      gl_FragColor = vec4(0.3,0.3,0.3,1);
+      gl_FragColor = v_color;
     }
     `,
     attributes: {
-      a_uv : {}
+      a_uv: {}
     },
     uniforms: {
-      u_model_view_matrix : { value : null},
-      u_projection_matrix : { value : null},
-      u_sampler : { value : null}
+      u_view_projection_matrix: {},
+      u_sampler_0: {}
     }
   };
 

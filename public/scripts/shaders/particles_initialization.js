@@ -18,28 +18,31 @@ void function(){
   var shader = {
     name : 'particles_initialization',
     vertexSource : `
-    attribute highp vec3 a_vertex_position;
-    void main(void) {
+    precision highp float;
+    attribute vec3 a_vertex_position;
+    void main() {
       gl_Position = vec4(a_vertex_position, 1.0);
     }
     `,
     fragmentSource : `
-    #extension GL_EXT_draw_buffers : require
     precision highp float;
-    const vec2 resolution = vec2(1024,1024);
+    uniform vec2 u_resolution;
+
     float rand(vec2 seed) {
       return fract(sin(dot(seed.xy,vec2(12.9898,78.233))) * 43758.5453);
     }
+
     void main() {
-      vec2 uv = gl_FragCoord.xy/resolution.xy;
-      vec4 pos = vec4(uv.x, uv.y, rand(uv), 1.0);
-      gl_FragData[0] = pos;
+      vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+      vec3 pos = vec3(uv.x - 0.5, uv.y - 0.5, rand(uv) - 0.5);
+      gl_FragData[0] = vec4(pos, 1.0);
     }
     `,
     attributes: {
-      a_vertex_position : {}
+      a_vertex_position: {}
     },
     uniforms: {
+      u_resolution: {}
     }
   };
 

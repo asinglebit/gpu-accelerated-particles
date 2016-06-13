@@ -13,68 +13,78 @@ void function(){
 
   // Private members
 
-  var PARTICLE_COUNT = 1024 * 1024;
+  var PARTICLE_BUFFER_DIMENSIONS = 250;
+  var PARTICLE_BUFFER_TEXTURE_COUNT = 1;
+  var PARTICLE_COUNT = PARTICLE_BUFFER_DIMENSIONS * PARTICLE_BUFFER_DIMENSIONS;
 
   var _canvas = null;
   var _context = null;
-  var _extensions = [];
+  var _extensions = null;
   var _width = null;
   var _height = null;
-
-  var _paused = false;
-
   var _camera = null;
-  var _full_screen_quad = null;
-  var _full_screen_quad_frame_buffer = [];
-  var _frame_buffers = [];
-  var _shaders = [];
+  var _paused = true;
 
-  var _particle_pos = [];
-  var _particle_uv = [];
+  var _shaders = [];
+  var _frame_buffers = {
+    render_buffer : {},
+    particle_buffer : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)}
+  };
+  var _buffers = {
+    particle_uvs: {size: 2, count: PARTICLE_COUNT, data: null},
+    full_screen_quad: {size: 3, count: 6, data: new Float32Array([-1.0, -1.0,  0.0, 1.0,  1.0,  0.0, -1.0,  1.0,  0.0, -1.0, -1.0,  0.0, 1.0, -1.0,  0.0, 1.0,  1.0,  0.0, ])}
+  };
 
   // Private methods
 
   var _initialize = function(canvas){
+    _init_viewport(canvas);
+    _init_shaders();
+    _fill_buffers();
+    _init_buffers();
+    _init_frame_buffers();
+    _init_particles();
+    _loading_complete();
+  };
 
-    // Get context
+  var _init_viewport = function(canvas){
+
+    // Initialize context
 
     _canvas = document.getElementById(canvas);
-    _context = _canvas.getContext("experimental-webgl", { preserveDrawingBuffer:true });
-    //_context = WebGLDebugUtils.makeDebugContext(_canvas.getContext("experimental-webgl", { preserveDrawingBuffer:true }));
-    _extensions.push({ name : 'OES_texture_float', extension : _context.getExtension('OES_texture_float') });
-    _extensions.push({ name : 'WEBGL_draw_buffers', extension : _context.getExtension('WEBGL_draw_buffers') });
-    _context.enable(_context.DEPTH_TEST);
-    _context.depthFunc(_context.LEQUAL);
+    _context = _canvas.getContext("experimental-webgl");
+    _context.clearColor(0.0, 0.0, 0.0, 0.0);
+    _context.disable(_context.DEPTH_TEST);
+    _context.depthMask(false);
+    _context.enable(_context.BLEND);
+    _context.blendFunc(_context.SRC_ALPHA, _context.ONE);
+
+    // Initialize extensions
+
+    _extensions = {
+      mrt : _context.getExtension('WEBGL_draw_buffers'),
+      float_textures : _context.getExtension('OES_texture_float')
+    }
 
     // Initialize camera
 
     _camera = new application.constructors.camera(100, 0.1, 100.0, window.innerWidth / window.innerHeight);
 
-    // Resize viewport
+    // Initialize viewport
 
     _resize();
     _clear();
     _loading();
-
-    // Initialize systems
-
-    _frame_buffers = _init_frame_buffers(1, 1);
-    _full_screen_quad_frame_buffer = _init_frame_buffers(1, 1);
-    _init_full_screen_quad();
-    _init_shaders();
-    _generate_particle_uv_data();
-    _init_particles();
-    _loading_complete();
-  };
+  }
 
   var _resize = function(){
     _width = _canvas.width  = window.innerWidth;
     _height = _canvas.height = window.innerHeight;
     _context.viewport(0, 0, _width, _height);
-    _camera.aspect = _width/_height;
+    _camera.aspect = _width / _height;
     _camera.update();
-    _delete_frame_buffers(_frame_buffers);
-    _frame_buffers = _init_frame_buffers(1, 1);
+    _init_render_buffer();
+    _init_render_buffer();
   }
 
   var _loading = function(){
@@ -93,7 +103,7 @@ void function(){
     _clear();
     _camera.update();
     _draw_particles();
-    //_full_screen_quad.render();
+    _draw_full_screen_quad();
   };
 
   var _clear = function(){
@@ -103,130 +113,55 @@ void function(){
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
 
-  // Initialize objects
+  // Frame buffers
 
-  var _generate_particle_uv_data = function(){
-    var particle_uv = [];
-    for (var y=0; y<1024; ++y) {
-      for (var x=0; x<1024; ++x) {
-        particle_uv.push(x/1024);
-        particle_uv.push(y/1024);
-      }
-    }
-    _particle_uv = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, _particle_uv);
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array(particle_uv), _context.STATIC_DRAW);
-    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+  var _init_frame_buffers = function(){
+    _init_particle_buffer();
+    _init_render_buffer();
   }
 
-  var _init_particles = function(){
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers[0].frame_buffer);
-    _context.viewport(0, 0, 1024, 1024);
-    _context.clear(_context.COLOR_BUFFER_BIT);
-    _context.blendFunc(_context.ONE, _context.ZERO);
-    _context.useProgram(_shaders[1].program);
-    _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
-    _context.vertexAttribPointer(_shaders[1].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
-    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
-    _context.drawElements(_context.TRIANGLES, 6, _context.UNSIGNED_SHORT, 0);
-    _context.bindBuffer(_context.ARRAY_BUFFER, null);
-  }
+  // Particle buffer
 
-  var _draw_particles = function(){
-    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    _context.viewport(0, 0, _width, _height);
-    _context.clear(_context.COLOR_BUFFER_BIT);
-    _context.blendFunc(_context.SRC_ALPHA, _context.ONE);
-    _context.useProgram(_shaders[2].program);
-    _context.bindBuffer(_context.ARRAY_BUFFER, _particle_uv);
-    _context.vertexAttribPointer(_shaders[2].attributes.a_uv.location, 2, _context.FLOAT, false, 0, 0);
-    _context.activeTexture(_context.TEXTURE0);
-    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers[0].textures[0]);
-    _context.uniform1i(_shaders[2].uniforms.u_sampler.location, 0);
-    _context.uniformMatrix4fv(_shaders[2].uniforms.u_projection_matrix.location, false, _camera.projection_matrix);
-    _context.uniformMatrix4fv(_shaders[2].uniforms.u_model_view_matrix.location, false, _camera.view_matrix);
-    _context.drawArrays(_context.POINTS, 0, PARTICLE_COUNT);
-    _context.bindTexture(_context.TEXTURE_2D, null);
-    _context.bindBuffer(_context.ARRAY_BUFFER, null);
-  }
-
-  var _init_full_screen_quad = function(){
-    _full_screen_quad = {};
-    _full_screen_quad.vertex_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
-    _context.bufferData(_context.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), _context.STATIC_DRAW);
-    _full_screen_quad.index_buffer = _context.createBuffer();
-    _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
-    _context.bufferData(_context.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), _context.STATIC_DRAW);
-
-    _full_screen_quad.model_matrix = mat4.create();
-    _full_screen_quad.model_view_matrix = mat4.create();
-
-    _full_screen_quad.render = function(){
-      _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-      _context.viewport(0, 0, _width, _height);
-      _context.useProgram(_shaders[0].program);
-      _context.bindBuffer(_context.ARRAY_BUFFER, _full_screen_quad.vertex_buffer);
-      _context.vertexAttribPointer(_shaders[0].attributes.a_vertex_position.location, 3, _context.FLOAT, false, 0, 0);
-      _context.activeTexture(_context.TEXTURE0);
-      _context.bindTexture(_context.TEXTURE_2D, _full_screen_quad_frame_buffer[0].textures[0]);
-      _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
-      _context.bindBuffer(_context.ELEMENT_ARRAY_BUFFER, _full_screen_quad.index_buffer);
-      _context.drawElements(_context.TRIANGLES, 6, _context.UNSIGNED_SHORT, 0);
-      _context.bindBuffer(_context.ARRAY_BUFFER, null);
-    }
-  }
-
-  // Initialize frame buffer
-
-  var _init_frame_buffers = function(frame_buffer_count, textures_per_frame_buffer_count){
-    var frame_buffer_holder = [];
-    for (var i = 0; i < frame_buffer_count; ++i){
-      frame_buffer_holder.push({
-        frame_buffer : _context.createFramebuffer(),
-        textures : []
-      });
-
-      _context.bindFramebuffer(_context.FRAMEBUFFER, frame_buffer_holder[i].frame_buffer);
-      frame_buffer_holder[i].frame_buffer.width = _width;
-      frame_buffer_holder[i].frame_buffer.height = _height;
-
-      var multiple_textures = [];
-      for (var j = 0; j < textures_per_frame_buffer_count; ++j){
-        frame_buffer_holder[i].textures[j] = _context.createTexture();
-        _context.bindTexture(_context.TEXTURE_2D, frame_buffer_holder[i].textures[j]);
-        _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
-        _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
-        _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
-        _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
-        _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, frame_buffer_holder[i].frame_buffer.width, frame_buffer_holder[i].frame_buffer.height, 0, _context.RGBA, _context.FLOAT, null);
-        _context.bindTexture(_context.TEXTURE_2D, null);
-        _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, frame_buffer_holder[i].textures[j], 0);
-        multiple_textures.push(_extensions[1].extension['COLOR_ATTACHMENT' + j + '_WEBGL'])
-      }
-      _extensions[1].extension.drawBuffersWEBGL(multiple_textures);
-
-      var renderbuffer = _context.createRenderbuffer();
-      _context.bindRenderbuffer(_context.RENDERBUFFER, renderbuffer);
-      _context.renderbufferStorage(_context.RENDERBUFFER, _context.DEPTH_COMPONENT16, frame_buffer_holder[i].frame_buffer.width, frame_buffer_holder[i].frame_buffer.height);
-      _context.framebufferRenderbuffer(_context.FRAMEBUFFER, _context.DEPTH_ATTACHMENT, _context.RENDERBUFFER, renderbuffer);
-
+  var _init_particle_buffer = function(){
+    for (var i = 0; i < PARTICLE_BUFFER_TEXTURE_COUNT; ++i) {
+      _frame_buffers.particle_buffer.textures[i] = _context.createTexture();
+      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[i]);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
+      _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
+      _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS, 0, _context.RGBA, _context.FLOAT, null);
       _context.bindTexture(_context.TEXTURE_2D, null);
-      _context.bindRenderbuffer(_context.RENDERBUFFER, null);
-      _context.bindFramebuffer(_context.FRAMEBUFFER, null);
     }
-
-    return frame_buffer_holder;
+    _frame_buffers.particle_buffer.frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer.frame_buffer);
+    _context.framebufferTexture2D(_context.FRAMEBUFFER, _extensions.mrt.COLOR_ATTACHMENT0_WEBGL, _context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[0], 0);
+    _extensions.mrt.drawBuffersWEBGL([_extensions.mrt.COLOR_ATTACHMENT0_WEBGL]);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
   }
 
-  var _delete_frame_buffers = function(frame_buffer_holder){
+  // Render buffer
+
+  var _init_render_buffer = function(){
+    _frame_buffers.render_buffer.texture = _context.createTexture();
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.render_buffer.texture);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
+    _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
+    _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, _width, _height, 0, _context.RGBA, _context.FLOAT, null);
+    _context.bindTexture(_context.TEXTURE_2D, null);
+    _frame_buffers.render_buffer.frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.render_buffer.frame_buffer);
+    _context.framebufferTexture2D(_context.FRAMEBUFFER, _context.COLOR_ATTACHMENT0, _context.TEXTURE_2D, _frame_buffers.render_buffer.texture, 0);
+    _context.bindTexture(_context.TEXTURE_2D, null);
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
-    for (var i = 0; i < frame_buffer_holder.length; ++i){
-      for (var j = 0; j < frame_buffer_holder[i].textures.length; ++j){
-        _context.deleteTexture(frame_buffer_holder[i].textures[j]);
-      }
-      _context.deleteFramebuffer(frame_buffer_holder[i].frame_buffer);
-    }
+  }
+
+  var _delete_render_buffer = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    _context.deleteTexture(_frame_buffers.render_buffer.texture);
+    _context.deleteFramebuffer(_frame_buffers.render_buffer.frame_buffer);
   }
 
   // Initialize shaders
@@ -266,10 +201,90 @@ void function(){
     }
   }
 
+  // Initialize buffers
+
+  var _fill_buffers = function(){
+    var particle_uv = [];
+    for (var y = 0; y < PARTICLE_BUFFER_DIMENSIONS; ++y) {
+      for (var x = 0; x < PARTICLE_BUFFER_DIMENSIONS; ++x) {
+        particle_uv.push(x / PARTICLE_BUFFER_DIMENSIONS);
+        particle_uv.push(y / PARTICLE_BUFFER_DIMENSIONS);
+      }
+    }
+    _buffers.particle_uvs.data = new Float32Array(particle_uv);
+  }
+
+  var _init_buffers = function(){
+    for (var buffer in _buffers) {
+      if (_buffers.hasOwnProperty(buffer)) {
+        _buffers[buffer].buffer = _context.createBuffer();
+        _context.bindBuffer(_context.ARRAY_BUFFER, _buffers[buffer].buffer);
+        _context.bufferData(_context.ARRAY_BUFFER, _buffers[buffer].data, _context.STATIC_DRAW);
+        _context.bindBuffer(_context.ARRAY_BUFFER, null);
+      }
+    }
+  }
+
+  // Particles
+
+  var _init_particles = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer.frame_buffer);
+    _context.viewport(0, 0, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.blendFunc(_context.ONE, _context.ZERO);
+    _context.useProgram(_shaders[1].program);
+    _context.enableVertexAttribArray(_shaders[1].attributes.a_vertex_position.location);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.full_screen_quad.buffer);
+    _context.vertexAttribPointer( _shaders[1].attributes.a_vertex_position.location, _buffers.full_screen_quad.size, _context.FLOAT, false, 0, 0);
+    _context.uniform2f(_shaders[1].uniforms.u_resolution.location, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS);
+    _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+    _context.disableVertexAttribArray(_shaders[1].attributes.a_vertex_position.location);
+    _context.useProgram(null);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+  }
+
+  var _draw_particles = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.render_buffer.frame_buffer);
+    _context.viewport(0, 0, _width, _height);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.blendFunc(_context.SRC_ALPHA, _context.ONE);
+    _context.useProgram(_shaders[2].program);
+    _context.enableVertexAttribArray(_shaders[2].attributes.a_uv.location);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.particle_uvs.buffer);
+    _context.vertexAttribPointer(_shaders[2].attributes.a_uv.location, _buffers.particle_uvs.size, _context.FLOAT, false, 0, 0);
+    _context.uniformMatrix4fv(_shaders[2].uniforms.u_view_projection_matrix.location, false, _camera.view_projection_matrix);
+    _context.activeTexture(_context.TEXTURE0);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[0]);
+    _context.uniform1i(_shaders[2].uniforms.u_sampler_0.location, 0);
+    _context.drawArrays(_context.POINTS, 0, _buffers.particle_uvs.count);
+    _context.bindTexture(_context.TEXTURE_2D, null);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+    _context.disableVertexAttribArray(_shaders[2].attributes.a_uv.location);
+    _context.useProgram(null);
+  }
+
+  // Render
+
+  var _draw_full_screen_quad = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+    _context.viewport(0, 0, _width, _height);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.useProgram(_shaders[0].program);
+    _context.enableVertexAttribArray(_shaders[0].attributes.a_vertex_position.location);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.full_screen_quad.buffer);
+    _context.vertexAttribPointer( _shaders[0].attributes.a_vertex_position.location, _buffers.full_screen_quad.size, _context.FLOAT, false, 0, 0);
+    _context.activeTexture(_context.TEXTURE0);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.render_buffer.texture);
+    _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
+    _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
+    _context.disableVertexAttribArray(_shaders[0].attributes.a_vertex_position.location);
+  }
+
   // Data bindings
 
   var _update_background_color = function(color){
-    this.params.colors.background = color;
+    renderer.params.colors.background = color;
   }
 
   var _add_shader = function(shader){

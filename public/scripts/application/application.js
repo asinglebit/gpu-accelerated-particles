@@ -115,14 +115,14 @@ var application = application || (function () {
 
     // Control mode
 
-    Mousetrap.bind("alt", function() {
+    /*Mousetrap.bind("alt", function() {
       _control_cam = true;
       return false;
     }, "keydown");
     Mousetrap.bind("alt", function() {
       _control_cam = false;
       return false;
-    }, "keyup");
+    }, "keyup");*/
 
     // Control mode
 
