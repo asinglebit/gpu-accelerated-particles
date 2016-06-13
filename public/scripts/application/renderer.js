@@ -13,7 +13,7 @@ void function(){
 
   // Private members
 
-  var PARTICLE_BUFFER_DIMENSIONS = 250;
+  var PARTICLE_BUFFER_DIMENSIONS = 1024;
   var PARTICLE_BUFFER_TEXTURE_COUNT = 1;
   var PARTICLE_COUNT = PARTICLE_BUFFER_DIMENSIONS * PARTICLE_BUFFER_DIMENSIONS;
 
@@ -28,7 +28,8 @@ void function(){
   var _shaders = [];
   var _frame_buffers = {
     render_buffer : {},
-    particle_buffer : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)}
+    particle_buffer_0 : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)},
+    particle_buffer_1 : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)}
   };
   var _buffers = {
     particle_uvs: {size: 2, count: PARTICLE_COUNT, data: null},
@@ -83,7 +84,7 @@ void function(){
     _context.viewport(0, 0, _width, _height);
     _camera.aspect = _width / _height;
     _camera.update();
-    _init_render_buffer();
+    _delete_render_buffer();
     _init_render_buffer();
   }
 
@@ -102,6 +103,7 @@ void function(){
   var _tick_ready = function(){
     _clear();
     _camera.update();
+    _move_particles();
     _draw_particles();
     _draw_full_screen_quad();
   };
@@ -116,16 +118,17 @@ void function(){
   // Frame buffers
 
   var _init_frame_buffers = function(){
-    _init_particle_buffer();
+    _init_particle_buffer(_frame_buffers.particle_buffer_0);
+    _init_particle_buffer(_frame_buffers.particle_buffer_1);
     _init_render_buffer();
   }
 
   // Particle buffer
 
-  var _init_particle_buffer = function(){
+  var _init_particle_buffer = function(particle_buffer){
     for (var i = 0; i < PARTICLE_BUFFER_TEXTURE_COUNT; ++i) {
-      _frame_buffers.particle_buffer.textures[i] = _context.createTexture();
-      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[i]);
+      particle_buffer.textures[i] = _context.createTexture();
+      _context.bindTexture(_context.TEXTURE_2D, particle_buffer.textures[i]);
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_S, _context.CLAMP_TO_EDGE);
@@ -133,9 +136,9 @@ void function(){
       _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS, 0, _context.RGBA, _context.FLOAT, null);
       _context.bindTexture(_context.TEXTURE_2D, null);
     }
-    _frame_buffers.particle_buffer.frame_buffer = _context.createFramebuffer();
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer.frame_buffer);
-    _context.framebufferTexture2D(_context.FRAMEBUFFER, _extensions.mrt.COLOR_ATTACHMENT0_WEBGL, _context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[0], 0);
+    particle_buffer.frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, particle_buffer.frame_buffer);
+    _context.framebufferTexture2D(_context.FRAMEBUFFER, _extensions.mrt.COLOR_ATTACHMENT0_WEBGL, _context.TEXTURE_2D, particle_buffer.textures[0], 0);
     _extensions.mrt.drawBuffersWEBGL([_extensions.mrt.COLOR_ATTACHMENT0_WEBGL]);
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
   }
@@ -228,7 +231,7 @@ void function(){
   // Particles
 
   var _init_particles = function(){
-    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer.frame_buffer);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer_0.frame_buffer);
     _context.viewport(0, 0, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS);
     _context.clear(_context.COLOR_BUFFER_BIT);
     _context.blendFunc(_context.ONE, _context.ZERO);
@@ -244,23 +247,47 @@ void function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
   }
 
+  var _move_particles = function(){
+    _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.particle_buffer_1.frame_buffer);
+    _context.viewport(0, 0, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS);
+    _context.clear(_context.COLOR_BUFFER_BIT);
+    _context.blendFunc(_context.ONE, _context.ZERO);
+    _context.useProgram(_shaders[2].program);
+    _context.enableVertexAttribArray(_shaders[2].attributes.a_vertex_position.location);
+    _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.full_screen_quad.buffer);
+    _context.vertexAttribPointer( _shaders[2].attributes.a_vertex_position.location, _buffers.full_screen_quad.size, _context.FLOAT, false, 0, 0);
+    _context.uniform2f(_shaders[2].uniforms.u_resolution.location, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS);
+    _context.activeTexture(_context.TEXTURE0);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[0]);
+    _context.uniform1i(_shaders[2].uniforms.u_sampler_0.location, 0);
+    _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
+    _context.bindBuffer(_context.ARRAY_BUFFER, null);
+    _context.disableVertexAttribArray(_shaders[2].attributes.a_vertex_position.location);
+    _context.useProgram(null);
+    _context.bindFramebuffer(_context.FRAMEBUFFER, null);
+
+    // Swap buffers
+
+    _frame_buffers.particle_buffer_0 = [_frame_buffers.particle_buffer_1, _frame_buffers.particle_buffer_1 = _frame_buffers.particle_buffer_0][0];
+  }
+
   var _draw_particles = function(){
     _context.bindFramebuffer(_context.FRAMEBUFFER, _frame_buffers.render_buffer.frame_buffer);
     _context.viewport(0, 0, _width, _height);
     _context.clear(_context.COLOR_BUFFER_BIT);
     _context.blendFunc(_context.SRC_ALPHA, _context.ONE);
-    _context.useProgram(_shaders[2].program);
-    _context.enableVertexAttribArray(_shaders[2].attributes.a_uv.location);
+    _context.useProgram(_shaders[3].program);
+    _context.enableVertexAttribArray(_shaders[3].attributes.a_uv.location);
     _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.particle_uvs.buffer);
-    _context.vertexAttribPointer(_shaders[2].attributes.a_uv.location, _buffers.particle_uvs.size, _context.FLOAT, false, 0, 0);
-    _context.uniformMatrix4fv(_shaders[2].uniforms.u_view_projection_matrix.location, false, _camera.view_projection_matrix);
+    _context.vertexAttribPointer(_shaders[3].attributes.a_uv.location, _buffers.particle_uvs.size, _context.FLOAT, false, 0, 0);
+    _context.uniformMatrix4fv(_shaders[3].uniforms.u_view_projection_matrix.location, false, _camera.view_projection_matrix);
     _context.activeTexture(_context.TEXTURE0);
-    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer.textures[0]);
-    _context.uniform1i(_shaders[2].uniforms.u_sampler_0.location, 0);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[0]);
+    _context.uniform1i(_shaders[3].uniforms.u_sampler_0.location, 0);
     _context.drawArrays(_context.POINTS, 0, _buffers.particle_uvs.count);
     _context.bindTexture(_context.TEXTURE_2D, null);
     _context.bindBuffer(_context.ARRAY_BUFFER, null);
-    _context.disableVertexAttribArray(_shaders[2].attributes.a_uv.location);
+    _context.disableVertexAttribArray(_shaders[3].attributes.a_uv.location);
     _context.useProgram(null);
   }
 

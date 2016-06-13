@@ -7,19 +7,20 @@ void function(){
   // Check application availability
 
   if (typeof application == "undefined") {
-    console.log("fragment_shader.js : No 'application' module found! Be sure to load it up first!");
+    console.log("particles_init.js : No 'application' module found! Be sure to load it up first!");
     return;
   };
   if (typeof application.renderer == "undefined") {
-    console.log("fragment_shader.js : No 'renderer' module found! Be sure to load it up first!");
+    console.log("particles_init.js : No 'renderer' module found! Be sure to load it up first!");
     return;
   };
 
   var shader = {
-    name : 'particles_initialization',
+    name : 'particles_init',
     vertexSource : `
     precision highp float;
     attribute vec3 a_vertex_position;
+    
     void main() {
       gl_Position = vec4(a_vertex_position, 1.0);
     }

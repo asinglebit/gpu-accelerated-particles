@@ -7,11 +7,11 @@ void function(){
   // Check application availability
 
   if (typeof application == "undefined") {
-    console.log("fragment_shader.js : No 'application' module found! Be sure to load it up first!");
+    console.log("full_screen_quad.js : No 'application' module found! Be sure to load it up first!");
     return;
   };
   if (typeof application.renderer == "undefined") {
-    console.log("fragment_shader.js : No 'renderer' module found! Be sure to load it up first!");
+    console.log("full_screen_quad.js : No 'renderer' module found! Be sure to load it up first!");
     return;
   };
 
