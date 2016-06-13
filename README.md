@@ -4,5 +4,6 @@ This is a project I am working on in my spare time. Mainly for fun, research and
 
 TODO:
 
-1. Initial pass, write starting data into textures
-2. Regular pass, combine data into render buffer
+1. Add a velocities buffer and duplicate positions and velocities buffers.
+2. Compute positions and velocities in fragment shaders.
+3. Introduce buffer swapping mechanism
