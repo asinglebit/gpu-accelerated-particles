@@ -19,9 +19,9 @@ void function(){
   // Private members
 
   var HOME_VIEW = {
-    YAW_ANGLE : 0.0,
-    PITCH_ANGLE : 0.0,
-    RADIUS : 5
+    YAW_ANGLE : 0.785398,
+    PITCH_ANGLE : 0.785398,
+    RADIUS : 3
   }
 
   var camera = function(fov, near, far, aspect) {
