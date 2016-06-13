@@ -353,6 +353,7 @@ void function(){
     camera_pan : function(x, y){ _camera.pan(x, y); },
     camera_zoom : function(value){ _camera.zoom(value); },
     pause : function(){ _paused = !_paused; },
+    simulation_reset : _init_particles,
 
     // Miscellaneous
 

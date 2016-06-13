@@ -33,7 +33,7 @@ void function(){
     void main() {
       vec2 uv = gl_FragCoord.xy/u_resolution.xy;
       highp vec4 pos = texture2D(u_sampler_0, uv);
-      highp vec4 new_pos = pos + vec4(0.001, 0.001, 0.001, 0);
+      highp vec4 new_pos = pos + vec4(uv.x, uv.y, 0.001, 0);
       gl_FragData[0] = new_pos;
     }
     `,

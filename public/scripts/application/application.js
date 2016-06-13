@@ -113,6 +113,12 @@ var application = application || (function () {
       application.renderer.camera_reset();
     });
 
+    // Reset simulation
+
+    Mousetrap.bind("r", function() {
+      application.renderer.simulation_reset();
+    });
+
     // Control mode
 
     /*Mousetrap.bind("alt", function() {
