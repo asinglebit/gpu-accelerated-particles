@@ -34,16 +34,16 @@ void function(){
 
     varying vec2 v_uv;
     uniform sampler2D u_sampler;
-
+    uniform vec2 u_resolution;
     void main(void) {
-      vec4 texel = texture2D(u_sampler, vec2(v_uv.s, v_uv.t));
-      gl_FragColor = vec4(texel.rgba);
+      gl_FragColor = texture2D(u_sampler, vec2(v_uv.s, v_uv.t));
     }
     `,
     attributes: {
       a_vertex_position : {}
     },
     uniforms: {
+      u_resolution: {},
       u_sampler : {}
     }
   };

@@ -39,8 +39,8 @@ void function(){
 
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-      vec3 position = vec3(uv.x - 0.5, uv.y - 0.5, rand(uv) - 0.5);
-      vec3 velocity = vec3(-2.0, 1.3, 2.0);
+      vec3 position = vec3(uv.x - 0.5, rand(uv) - 0.5, rand(uv) - 0.5);
+      vec3 velocity = vec3(-2.0, rand(uv), -2.0);
       gl_FragData[0] = vec4(position, 1.0);
       gl_FragData[1] = vec4(velocity, 1.0);
     }

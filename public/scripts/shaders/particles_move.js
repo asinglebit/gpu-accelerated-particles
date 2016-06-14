@@ -40,12 +40,12 @@ void function(){
       vec3 position = texture2D(u_sampler_0, uv).rgb;
       vec3 velocity = texture2D(u_sampler_1, uv).rgb;
 
-      vec3 velocity_vector = vec3(0.0, 0.0, 0.0) - position;
+      vec3 velocity_vector = vec3(0.0, 0.1, 0.0) - position;
       float velocity_vector_length = length(velocity_vector);
       vec3 acceleration = (velocity_vector/velocity_vector_length) * 5.0 / velocity_vector_length;
 
-      position += velocity * 0.05;
-      velocity = 0.9 * velocity + acceleration * 0.05;
+      position += 1.0 * velocity * 0.02;
+      velocity = velocity + acceleration * 0.02;
 
       gl_FragData[0] = vec4(position, 1.0);
       gl_FragData[1] = vec4(velocity, 1.0);

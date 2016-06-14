@@ -296,6 +296,9 @@ void function(){
     _context.activeTexture(_context.TEXTURE0);
     _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[0]);
     _context.uniform1i(_shaders[3].uniforms.u_sampler_0.location, 0);
+    _context.activeTexture(_context.TEXTURE1);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[1]);
+    _context.uniform1i(_shaders[3].uniforms.u_sampler_1.location, 1);
     _context.drawArrays(_context.POINTS, 0, _buffers.particle_uvs.count);
     _context.bindTexture(_context.TEXTURE_2D, null);
     _context.bindBuffer(_context.ARRAY_BUFFER, null);
