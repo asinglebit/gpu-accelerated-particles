@@ -4,8 +4,6 @@ This is a project I am working on in my spare time. Mainly for fun, research and
 
 TODO:
 
-1. Add velocity buffer.
-2. Introduce gravity concept.
-3. Add mouse position bound gravity.
-4. Add timer.
-5. Add fixed simulation step support.
+1. Add mouse position bound gravity.
+2. Add timer.
+3. Add fixed simulation step support.
