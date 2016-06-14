@@ -19,6 +19,7 @@ void function(){
     name : 'particles_move',
     vertexSource : `
     precision highp float;
+
     attribute vec3 a_vertex_position;
 
     void main() {
@@ -26,15 +27,28 @@ void function(){
     }
     `,
     fragmentSource : `
+    #extension GL_EXT_draw_buffers : require
+
     precision highp float;
+
     uniform vec2 u_resolution;
     uniform sampler2D u_sampler_0;
+    uniform sampler2D u_sampler_1;
 
     void main() {
-      vec2 uv = gl_FragCoord.xy/u_resolution.xy;
-      highp vec4 pos = texture2D(u_sampler_0, uv);
-      highp vec4 new_pos = pos + vec4(uv.x, uv.y, 0.001, 0);
-      gl_FragData[0] = new_pos;
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      vec3 position = texture2D(u_sampler_0, uv).rgb;
+      vec3 velocity = texture2D(u_sampler_1, uv).rgb;
+
+      vec3 velocity_vector = vec3(0.0, 0.0, 0.0) - position;
+      float velocity_vector_length = length(velocity_vector);
+      vec3 acceleration = (velocity_vector/velocity_vector_length) * 5.0 / velocity_vector_length;
+
+      position += velocity * 0.05;
+      velocity = 0.9 * velocity + acceleration * 0.05;
+
+      gl_FragData[0] = vec4(position, 1.0);
+      gl_FragData[1] = vec4(velocity, 1.0);
     }
     `,
     attributes: {
@@ -42,7 +56,8 @@ void function(){
     },
     uniforms: {
       u_resolution: {},
-      u_sampler_0: {}
+      u_sampler_0: {},
+      u_sampler_1: {}
     }
   };
 

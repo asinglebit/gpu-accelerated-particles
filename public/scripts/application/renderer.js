@@ -11,11 +11,17 @@ void function(){
     return;
   };
 
-  // Private members
+  // Globals
 
-  var PARTICLE_BUFFER_DIMENSIONS = 1024;
-  var PARTICLE_BUFFER_TEXTURE_COUNT = 1;
+  var CAMERA_FAR_PLANE = 100000000.0;
+  var CAMERA_NEAR_PLANE = 0.1;
+  var CAMERA_FOV = 100;
+
+  var PARTICLE_BUFFER_DIMENSIONS = 200;
+  var PARTICLE_BUFFER_TEXTURE_COUNT = 2;
   var PARTICLE_COUNT = PARTICLE_BUFFER_DIMENSIONS * PARTICLE_BUFFER_DIMENSIONS;
+
+  // Private members
 
   var _canvas = null;
   var _context = null;
@@ -28,8 +34,8 @@ void function(){
   var _shaders = [];
   var _frame_buffers = {
     render_buffer : {},
-    particle_buffer_0 : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)},
-    particle_buffer_1 : {textures: new Array(PARTICLE_BUFFER_TEXTURE_COUNT)}
+    particle_buffer_0 : {},
+    particle_buffer_1 : {}
   };
   var _buffers = {
     particle_uvs: {size: 2, count: PARTICLE_COUNT, data: null},
@@ -69,7 +75,7 @@ void function(){
 
     // Initialize camera
 
-    _camera = new application.constructors.camera(100, 0.1, 100.0, window.innerWidth / window.innerHeight);
+    _camera = new application.constructors.camera(CAMERA_FOV, CAMERA_NEAR_PLANE, CAMERA_FAR_PLANE, window.innerWidth / window.innerHeight);
 
     // Initialize viewport
 
@@ -126,8 +132,12 @@ void function(){
   // Particle buffer
 
   var _init_particle_buffer = function(particle_buffer){
+    particle_buffer.textures = [];
+    particle_buffer.frame_buffer = _context.createFramebuffer();
+    _context.bindFramebuffer(_context.FRAMEBUFFER, particle_buffer.frame_buffer);
+    var mrt = [];
     for (var i = 0; i < PARTICLE_BUFFER_TEXTURE_COUNT; ++i) {
-      particle_buffer.textures[i] = _context.createTexture();
+      particle_buffer.textures.push(_context.createTexture());
       _context.bindTexture(_context.TEXTURE_2D, particle_buffer.textures[i]);
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MAG_FILTER, _context.NEAREST);
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_MIN_FILTER, _context.NEAREST);
@@ -135,11 +145,10 @@ void function(){
       _context.texParameteri(_context.TEXTURE_2D, _context.TEXTURE_WRAP_T, _context.CLAMP_TO_EDGE);
       _context.texImage2D(_context.TEXTURE_2D, 0, _context.RGBA, PARTICLE_BUFFER_DIMENSIONS, PARTICLE_BUFFER_DIMENSIONS, 0, _context.RGBA, _context.FLOAT, null);
       _context.bindTexture(_context.TEXTURE_2D, null);
+      mrt[i] = _extensions.mrt['COLOR_ATTACHMENT' + i + '_WEBGL'];
+      _context.framebufferTexture2D(_context.FRAMEBUFFER, mrt[i], _context.TEXTURE_2D, particle_buffer.textures[i], 0);
     }
-    particle_buffer.frame_buffer = _context.createFramebuffer();
-    _context.bindFramebuffer(_context.FRAMEBUFFER, particle_buffer.frame_buffer);
-    _context.framebufferTexture2D(_context.FRAMEBUFFER, _extensions.mrt.COLOR_ATTACHMENT0_WEBGL, _context.TEXTURE_2D, particle_buffer.textures[0], 0);
-    _extensions.mrt.drawBuffersWEBGL([_extensions.mrt.COLOR_ATTACHMENT0_WEBGL]);
+    _extensions.mrt.drawBuffersWEBGL(mrt);
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
   }
 
@@ -260,6 +269,9 @@ void function(){
     _context.activeTexture(_context.TEXTURE0);
     _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[0]);
     _context.uniform1i(_shaders[2].uniforms.u_sampler_0.location, 0);
+    _context.activeTexture(_context.TEXTURE1);
+    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[1]);
+    _context.uniform1i(_shaders[2].uniforms.u_sampler_1.location, 1);
     _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
     _context.bindBuffer(_context.ARRAY_BUFFER, null);
     _context.disableVertexAttribArray(_shaders[2].attributes.a_vertex_position.location);
@@ -303,6 +315,7 @@ void function(){
     _context.vertexAttribPointer( _shaders[0].attributes.a_vertex_position.location, _buffers.full_screen_quad.size, _context.FLOAT, false, 0, 0);
     _context.activeTexture(_context.TEXTURE0);
     _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.render_buffer.texture);
+    //_context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_1.textures[0]);
     _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
     _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
     _context.disableVertexAttribArray(_shaders[0].attributes.a_vertex_position.location);
