@@ -28,7 +28,7 @@ void function(){
     void main() {
       gl_PointSize = 2.0;
       vec4 velocity = texture2D(u_sampler_1, a_uv);
-      v_color = vec4(0.3*length(velocity), 0.4, 0.2, 0.4);
+      v_color = vec4(0.3*length(velocity), 0.2,  0.7/length(velocity), 0.4);
       gl_Position = u_view_projection_matrix * texture2D(u_sampler_0, a_uv);
     }
     `,
