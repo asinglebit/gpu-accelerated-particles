@@ -13,7 +13,7 @@ var application = application || (function () {
 
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
-  var _control_cam = true;
+  var _click_mode = false;
 
   var _initialize = function(canvas){
 
@@ -121,14 +121,14 @@ var application = application || (function () {
 
     // Control mode
 
-    /*Mousetrap.bind("alt", function() {
-      _control_cam = true;
+    Mousetrap.bind("ctrl", function() {
+      _click_mode = true;
       return false;
     }, "keydown");
-    Mousetrap.bind("alt", function() {
-      _control_cam = false;
+    Mousetrap.bind("ctrl", function() {
+      _click_mode = false;
       return false;
-    }, "keyup");*/
+    }, "keyup");
 
     // Control mode
 
@@ -157,14 +157,30 @@ var application = application || (function () {
     // On mouse down
 
     window.addEventListener("mousedown", function(event) {
-      _mouse.buttons[event.which] = true;
+      if (_click_mode){
+        switch (event.which){
+          case 1:
+            // Left click
+            break;
+          case 2:
+            // Middle click
+            break;
+          case 3:
+            // Right click
+            break;
+        }
+      } else {
+        _mouse.buttons[event.which] = true;
+      }
       event.preventDefault();
     });
 
     // On mouse up
 
     window.addEventListener("mouseup", function(event) {
-      _mouse.buttons[event.which] = false;
+      if (!_click_mode){
+        _mouse.buttons[event.which] = false;
+      }
       event.preventDefault();
     });
 
@@ -194,16 +210,14 @@ var application = application || (function () {
 
     // Update camera
 
-    if (_control_cam) {
-      if (_mouse.buttons[1]) {
-        application.renderer.camera_rotate(K_ROTATE * _mouse.dx, K_ROTATE * _mouse.dy);
-      }
-      else if (_mouse.buttons[2]) {
-        application.renderer.camera_pan(K_PAN * _mouse.dx, -K_PAN * _mouse.dy);
-      }
-      else if (_mouse.buttons[3]) {
-        application.renderer.camera_zoom(K_ZOOM * _mouse.dy);
-      }
+    if (_mouse.buttons[1]) {
+      application.renderer.camera_rotate(K_ROTATE * _mouse.dx, K_ROTATE * _mouse.dy);
+    }
+    else if (_mouse.buttons[2]) {
+      application.renderer.camera_pan(K_PAN * _mouse.dx, -K_PAN * _mouse.dy);
+    }
+    else if (_mouse.buttons[3]) {
+      application.renderer.camera_zoom(K_ZOOM * _mouse.dy);
     }
 
     _mouse.dx = 0.0;

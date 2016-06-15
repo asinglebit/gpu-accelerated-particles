@@ -17,7 +17,7 @@ void function(){
   var CAMERA_NEAR_PLANE = 0.1;
   var CAMERA_FOV = 100;
 
-  var PARTICLE_BUFFER_DIMENSIONS = 500;
+  var PARTICLE_BUFFER_DIMENSIONS = 2048;
   var PARTICLE_BUFFER_TEXTURE_COUNT = 2;
   var PARTICLE_COUNT = PARTICLE_BUFFER_DIMENSIONS * PARTICLE_BUFFER_DIMENSIONS;
 
@@ -275,7 +275,7 @@ void function(){
     _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
     _context.bindBuffer(_context.ARRAY_BUFFER, null);
     _context.disableVertexAttribArray(_shaders[2].attributes.a_vertex_position.location);
-    _context.useProgram(null);
+    _context.useProgram(null);0
     _context.bindFramebuffer(_context.FRAMEBUFFER, null);
 
     // Swap buffers
