@@ -32,6 +32,7 @@ void function(){
     precision highp float;
 
     uniform vec2 u_resolution;
+    uniform vec3 u_gravity;
     uniform sampler2D u_sampler_0;
     uniform sampler2D u_sampler_1;
 
@@ -40,7 +41,7 @@ void function(){
       vec3 position = texture2D(u_sampler_0, uv).rgb;
       vec3 velocity = texture2D(u_sampler_1, uv).rgb;
 
-      vec3 velocity_vector = vec3(0.0, 0.1, 0.0) - position;
+      vec3 velocity_vector = u_gravity - position;
       float velocity_vector_length = length(velocity_vector);
       vec3 acceleration = (velocity_vector/velocity_vector_length) * 5.0 / velocity_vector_length;
 
@@ -56,6 +57,7 @@ void function(){
     },
     uniforms: {
       u_resolution: {},
+      u_gravity: {},
       u_sampler_0: {},
       u_sampler_1: {}
     }

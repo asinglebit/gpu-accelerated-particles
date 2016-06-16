@@ -8,8 +8,8 @@ var application = application || (function () {
 
   var K_ROTATE = 0.005;
   var K_PAN = 0.005;
-  var K_ZOOM = 0.005;
-  var K_ZOOM_WHEEL = 0.5;
+  var K_ZOOM = 0.05;
+  var K_ZOOM_WHEEL = 10;
 
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
@@ -160,7 +160,7 @@ var application = application || (function () {
       if (_click_mode){
         switch (event.which){
           case 1:
-            // Left click
+            application.renderer.gravity_update(_mouse.x, _mouse.y);
             break;
           case 2:
             // Middle click
