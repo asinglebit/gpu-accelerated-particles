@@ -43,7 +43,7 @@ void function(){
 
       vec3 velocity_vector = u_gravity - position;
       float velocity_vector_length = length(velocity_vector);
-      vec3 acceleration = (velocity_vector/velocity_vector_length) * 5.0 / velocity_vector_length;
+      vec3 acceleration = (velocity_vector/velocity_vector_length) * 9.8 / velocity_vector_length;
 
       position += 1.0 * velocity * 0.02;
       velocity = velocity + acceleration * 0.02;
