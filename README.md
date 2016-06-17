@@ -6,6 +6,14 @@ This demo uses experimental WebGL features such as floating point textures and r
 
 Live demo: http://singlebit.org/demos/gpu_accelerated_particles
 
+Controls:
+
+  - Left mouse button - Rotate
+  - Right mouse button - Gradual zoom
+  - Middle mouse button - Pan
+  - Mouse wheel - Snapping zoom
+  - Ctrl + Left mouse button - Assign new gravity center
+
 Screenshot:
 
 ![](https://github.com/VisViva/GPUAcceleratedParticles/blob/master/screenshots/screenshot.jpg)
