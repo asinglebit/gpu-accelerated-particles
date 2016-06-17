@@ -143,8 +143,14 @@ var application = application || (function () {
 
     Mousetrap.bind("space", function() {
       _paused = !_paused;
-      if (_paused) _show_ui();
-      else _hide_ui();
+      if (_paused){
+        _show_ui();
+        application.audio.set_muffle(200);
+      } else {
+        _hide_ui();
+        application.audio.set_muffle(2000);
+      }
+      application.audio.play();
       application.renderer.pause(_paused);
       return false;
     });

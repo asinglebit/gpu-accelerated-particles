@@ -13,23 +13,59 @@ void function(){
 
   // Globals
 
+  var _started = false;
+
   // Private members
 
-  var _audio = null;
+  var _context = null;
+  var _source = null;
+  var _muffle = null;
 
   // Private methods
 
   var _initialize = function(){
-    _audio = new Audio('./audio/audio.mp3');
-    _audio.play();
-    _audio.addEventListener('timeupdate', function(){
-      var buffer = .44
-      if(this.currentTime > this.duration - buffer){
-        this.currentTime = 0
-        this.play()
-      }
-    }, false);
-  }
+
+    // Initialize context
+
+    _context = new (window.AudioContext || window.webkitAudio_context)();
+    _source = _context.createBufferSource();
+    _get_source(function(source){
+      _muffle = _context.createBiquadFilter();
+      _context.decodeAudioData(source, function(buffer) {
+        _source.buffer = buffer;
+        _source.loop = true;
+        _source.connect(_muffle);
+        _muffle.connect(_context.destination);
+        _muffle.type = 0;
+        _muffle.frequency.value = 2000;
+      });
+    });
+  };
+
+  // Get source
+
+  var _get_source = function(callback){
+    var request = new XMLHttpRequest();
+    request.open('GET', './audio/audio.mp3', true);
+    request.responseType = 'arraybuffer';
+    request.onload = function() {
+      callback(request.response);
+    };
+    request.send();
+  };
+
+  // Controls
+
+  var _play = function(){
+    if (!_started){
+      _started = true;
+      _source.start(0);
+    };
+  };
+
+  var _set_muffle = function(value){
+    _muffle.frequency.value = value;
+  };
 
   // Public
 
@@ -37,7 +73,9 @@ void function(){
 
     // Public methods
 
-    initialize : _initialize
+    initialize : _initialize,
+    set_muffle : _set_muffle,
+    play : _play
 
   };
 

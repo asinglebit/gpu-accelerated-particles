@@ -33,10 +33,10 @@ body {
   color: #FFF;
   text-align: center;
   overflow: hidden;
-  -webkit-transition: all 1s !important;
-  -moz-transition: all 1s !important;
-  -o-transition: all 1s !important;
-  transition: all 1s !important;
+  -webkit-transition: opacity 3s;
+  -moz-transition: opacity 3s;
+  -o-transition: opacity 3s;
+  transition: opacity 3s;
 }
 
 .logo {
@@ -54,16 +54,12 @@ body {
   color: #FFF;
   text-align: center;
   overflow: hidden;
-  -webkit-transition: all 1s !important;
-  -moz-transition: all 1s !important;
-  -o-transition: all 1s !important;
-  transition: all 1s !important;
+  -webkit-transition: opacity 3s;
+  -moz-transition: opacity 3s;
+  -o-transition: opacity 3s;
+  transition: opacity 3s;
 }
 
 .visible {
   opacity: 1 !important;
-  -webkit-transition: all 3s !important;
-  -moz-transition: all 3s !important;
-  -o-transition: all 3s !important;
-  transition: all 3s !important;
 }
