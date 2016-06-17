@@ -17,8 +17,3 @@ Controls:
 Screenshot:
 
 ![](https://github.com/VisViva/GPUAcceleratedParticles/blob/master/screenshots/screenshot.jpg)
-
-TODO:
-
-1. Add timer.
-2. Add fixed simulation step support.
