@@ -32,6 +32,7 @@ void function(){
   var _height = null;
   var _camera = null;
   var _paused = true;
+  var _current_buffer = 0;
 
   var _shaders = [];
   var _frame_buffers = {
@@ -322,8 +323,14 @@ void function(){
     _context.bindBuffer(_context.ARRAY_BUFFER, _buffers.full_screen_quad.buffer);
     _context.vertexAttribPointer( _shaders[0].attributes.a_vertex_position.location, _buffers.full_screen_quad.size, _context.FLOAT, false, 0, 0);
     _context.activeTexture(_context.TEXTURE0);
-    _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.render_buffer.texture);
-    //_context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_1.textures[0]);
+    switch (_current_buffer){
+      case 0:
+      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.render_buffer.texture);
+      break;
+      case 1: case 2:
+      _context.bindTexture(_context.TEXTURE_2D, _frame_buffers.particle_buffer_0.textures[_current_buffer - 1]);
+      break;
+    }
     _context.uniform1i(_shaders[0].uniforms.u_sampler.location, 0);
     _context.drawArrays(_context.TRIANGLES, 0, _buffers.full_screen_quad.count);
     _context.disableVertexAttribArray(_shaders[0].attributes.a_vertex_position.location);
@@ -378,6 +385,10 @@ void function(){
     _gravity = gravity;
   }
 
+  var _change_buffer = function(buffer){
+    _current_buffer = buffer;
+  }
+
   // Miscellaneous
 
   var _screenshot = function(){
@@ -406,6 +417,7 @@ void function(){
     pause : function(paused){ _paused = paused; },
     simulation_reset : _init_particles,
     gravity_update : _gravity_update,
+    change_buffer : _change_buffer,
 
     // Miscellaneous
 

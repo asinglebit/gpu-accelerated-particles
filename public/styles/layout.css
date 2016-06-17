@@ -24,7 +24,6 @@ body {
 }
 
 #logo-holder {
-  opacity: 0;
   width: 50%;
   font-family: Logo;
   font-size: 120px;
@@ -33,10 +32,12 @@ body {
   color: #FFF;
   text-align: center;
   overflow: hidden;
-  -webkit-transition: opacity 3s;
-  -moz-transition: opacity 3s;
-  -o-transition: opacity 3s;
-  transition: opacity 3s;
+  opacity: 0;
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .logo {
@@ -46,7 +47,6 @@ body {
 }
 
 #info {
-  opacity: 0;
   width: 50%;
   font-family: Description;
   display: table-cell;
@@ -54,12 +54,40 @@ body {
   color: #FFF;
   text-align: center;
   overflow: hidden;
-  -webkit-transition: opacity 3s;
-  -moz-transition: opacity 3s;
-  -o-transition: opacity 3s;
-  transition: opacity 3s;
+  opacity: 0;
+  -webkit-transition: opacity 2s;
+  -moz-transition: opacity 2s;
+  -o-transition: opacity 2s;
+  transition: opacity 2s;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+#buffer_caption_holder {
+  font-family: Description;
+  font-size: 20px;
+  position: fixed;
+  bottom: 20px;
+  right: -20px;
+  color: #FFF;
+  width: 100%;
+  margin-left: 20px;
+}
+
+.buffer_caption {
+  text-align:left;
+  background-color: rgba(0,0,0,0.5);
+  padding-left:5px;
+  padding-right:5px;
 }
 
 .visible {
   opacity: 1 !important;
+}
+
+.hidden {
+  opacity: 0 !important;
+  -webkit-transition: opacity 4s;
+  -moz-transition: opacity 4s;
+  -o-transition: opacity 4s;
+  transition: opacity 4s;
 }

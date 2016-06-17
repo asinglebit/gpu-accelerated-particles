@@ -8,7 +8,6 @@
 
   <!-- Libraries -->
 
-  <script type="text/javascript" src="libs/dat.gui.min.js"></script>
   <script type="text/javascript" src="libs/gl-matrix-min.js"></script>
   <script type="text/javascript" src="libs/mousetrap.min.js"></script>
 
@@ -34,12 +33,15 @@
 </head>
 <body>
   <div id="ui">
+    <div id="buffer_caption_holder" class="hidden">
+      <span class="buffer_caption"><span id="buffer_caption">RENDER</span> BUFFER</span>
+    </div>
     <div id="logo-holder">
       <div id="logo">Sb</div>
     </div>
     <div id="info">
       <div style="font-size: 20px; margin-bottom:5px;">GPU ACCELERATED PARTICLES</div>
-      <div style="font-size: 11px; margin-bottom:30px;">BY ABDULALI GASIMOV</div>
+      <div style="font-size: 11px; margin-bottom:30px;">CODE AND MUSIC BY ABDULALI GASIMOV</div>
       <div style="font-size: 11px; margin-bottom:30px;">
         <span>LMB - ROTATE</span></br>
         <span>MMB - PAN</span></br>
@@ -49,7 +51,7 @@
         <span>SPACE - PLAY / PAUSE SIMULATION</span></br>
         <span>R - RESET SIMULATION</span></br>
         <span>CTRL+LMB - PLACE GRAVITY CENTER</span></br>
-        <span>B - SWITCH BUFFERS</span></br>
+        <span>B - SWITCH BUFFER</span></br>
       </div>
       <div style="font-size: 20px;">PRESS SPACE TO START!</div>
     </div>

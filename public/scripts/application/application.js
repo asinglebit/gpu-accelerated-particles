@@ -14,6 +14,7 @@ var application = application || (function () {
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
   var _click_mode = false;
+  var _current_buffer = 0;
   var _paused = true;
 
   var _initialize = function(canvas){
@@ -98,6 +99,12 @@ var application = application || (function () {
 
     Mousetrap.bind("r", function() {
       application.renderer.simulation_reset();
+    });
+
+    // Change rendering buffer
+
+    Mousetrap.bind("b", function() {
+      _change_buffer();
     });
 
     // Control mode
@@ -229,6 +236,30 @@ var application = application || (function () {
     var info = document.getElementById('info');
     info.className = "visible";
   };
+
+  var _change_buffer = function(){
+    if (_current_buffer == 2) _current_buffer = 0;
+    else ++_current_buffer;
+    application.renderer.change_buffer(_current_buffer);
+    var buffer_caption = document.getElementById('buffer_caption');
+    switch (_current_buffer){
+      case 0:
+      buffer_caption.innerHTML = "RENDER";
+      break;
+      case 1:
+      buffer_caption.innerHTML = "POSITION";
+      break;
+      case 2:
+      buffer_caption.innerHTML = "VELOCITY";
+      break;
+    }
+    var buffer_caption_holder = document.getElementById('buffer_caption_holder');
+    buffer_caption_holder.className = "";
+    buffer_caption_holder.style.opacity = 1;
+    setTimeout(function(){
+      buffer_caption_holder.className = "hidden";
+    },100);
+  }
 
   // Public space
 
