@@ -17,6 +17,7 @@ var application = [
   'bower_components/gl-matrix/dist/gl-matrix-min.js',
   'bower_components/mousetrap/mousetrap.min.js',
   'public/scripts/application/application.js',
+  'public/scripts/application/audio.js',
   'public/scripts/application/renderer.js',
   'public/scripts/application/camera.js',
   'public/scripts/application/utilities.js',
