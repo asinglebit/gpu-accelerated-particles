@@ -5,7 +5,6 @@ gp_minify = require('gulp-minifier'),
 gp_cssmin = require('gulp-cssmin');
 
 var libs = [
-  'bower_components/dat.gui/dat.gui.min.js',
   'bower_components/gl-matrix/dist/gl-matrix-min.js',
   'bower_components/mousetrap/mousetrap.min.js'
 ];
@@ -15,7 +14,6 @@ var views = [
 ];
 
 var application = [
-  'bower_components/dat.gui/dat.gui.min.js',
   'bower_components/gl-matrix/dist/gl-matrix-min.js',
   'bower_components/mousetrap/mousetrap.min.js',
   'public/scripts/application/application.js',

@@ -119,8 +119,7 @@ void function(){
   };
 
   var _clear = function(){
-    var background_color = renderer.params.colors.background;
-    _context.clearColor(background_color.r, background_color.g, background_color.b, 0.0);
+    _context.clearColor(0.0, 0.0, 0.0, 0.0);
     _context.clearDepth(1.0);
     _context.clear(_context.COLOR_BUFFER_BIT | _context.DEPTH_BUFFER_BIT);
   };
@@ -332,10 +331,6 @@ void function(){
 
   // Data bindings
 
-  var _update_background_color = function(color){
-    renderer.params.colors.background = color;
-  }
-
   var _add_shader = function(shader){
     _shaders.push(shader);
   }
@@ -394,14 +389,6 @@ void function(){
 
   var renderer = {
 
-    // Public members
-
-    params : {
-      colors: {
-        background: {r: 0, g: 0, b: 0}
-      }
-    },
-
     // Public methods
 
     initialize : _initialize,
@@ -412,7 +399,6 @@ void function(){
 
     // Controls
 
-    update_background_color : _update_background_color,
     camera_reset : function(){ _camera.reset(); },
     camera_rotate : function(x, y){ _camera.rotate(x, y); },
     camera_pan : function(x, y){ _camera.pan(x, y); },

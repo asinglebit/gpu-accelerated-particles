@@ -50,7 +50,6 @@ var application = application || (function () {
 
     // Initialize
 
-    //_initialize_gui();
     setTimeout(function(){
       _show_ui();
       _mouse_init();
@@ -72,33 +71,6 @@ var application = application || (function () {
       })();
     };
   }
-
-  var _initialize_gui = function(){
-
-    // References
-
-    var background_color = application.renderer.params.colors.background;
-    var particles_color = application.renderer.params.colors.particles;
-
-    // Controls
-
-    var controls = {
-      background: [background_color.r * 255, background_color.g * 255, background_color.b * 255],
-      screenshot: function() {
-        application.renderer.screenshot();
-      }
-    };
-
-    // Setup GUI
-
-    _gui = new dat.GUI();
-    _gui.addColor(controls, "background").onChange(function(value) {
-      if (value[0] === "#") value = application.utilities.hexademical_to_rgb(value);
-      value = application.utilities.destructure_rgb_color(value);
-      application.renderer.update_background_color(value);
-    });
-    _gui.add(controls, "screenshot");
-  };
 
   var _tick = function tick(){
 
