@@ -37,7 +37,7 @@ void function(){
         _source.connect(_muffle);
         _muffle.connect(_context.destination);
         _muffle.type = 'lowpass';
-        _muffle.frequency.value = 2000;
+        _muffle.frequency.value = 200;
       });
     });
   };

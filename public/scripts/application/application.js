@@ -55,7 +55,8 @@ var application = application || (function () {
       _show_ui();
       _mouse_init();
       _keyboard_init();
-      _tick();
+      _tick();      
+      application.audio.play();
     }, 0);
   };
 
