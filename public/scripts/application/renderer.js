@@ -417,7 +417,7 @@ void function(){
     camera_rotate : function(x, y){ _camera.rotate(x, y); },
     camera_pan : function(x, y){ _camera.pan(x, y); },
     camera_zoom : function(value){ _camera.zoom(value); },
-    pause : function(){ _paused = !_paused; },
+    pause : function(paused){ _paused = paused; },
     simulation_reset : _init_particles,
     gravity_update : _gravity_update,
 

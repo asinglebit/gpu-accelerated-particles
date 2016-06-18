@@ -1,8 +1,69 @@
+/* Fonts ****************************************************/
+
+@font-face { font-family: Logo; src: url('../fonts/logo.ttf'); }
+@font-face { font-family: Description; src: url('../fonts/description.ttf'); }
+
+/* Layout ***************************************************/
+
 body {
   margin: 0px;
-  background: #3a3a3a; /* Old browsers */
-  background: -moz-linear-gradient(top, #3a3a3a 0%, #0c0c0c 100%); /* FF3.6-15 */
-  background: -webkit-linear-gradient(top, #3a3a3a 0%,#0c0c0c 100%); /* Chrome10-25,Safari5.1-6 */
-  background: linear-gradient(to bottom, #3a3a3a 0%,#0c0c0c 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#4f4f4f', endColorstr='#1c1c1c', GradientType=0); /* IE6-9 */
+  background: #0c0c0c; /* Old browsers */
+  background: -moz-linear-gradient(top, #0c0c0c 0%, #181818 50%, #0c0c0c 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, #0c0c0c 0%,#181818 50%, #0c0c0c 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, #0c0c0c 0%,#181818 50%, #0c0c0c 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0c0c0c', endColorstr='#0c0c0c', GradientType=0); /* IE6-9 */
+}
+
+#ui {
+  cursor: default;
+  display: table;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 9000;
+}
+
+#logo-holder {
+  opacity: 0;
+  width: 50%;
+  font-family: Logo;
+  font-size: 120px;
+  display: table-cell;
+  vertical-align: middle;
+  color: #FFF;
+  text-align: center;
+  overflow: hidden;
+  -webkit-transition: all 1s !important;
+  -moz-transition: all 1s !important;
+  -o-transition: all 1s !important;
+  transition: all 1s !important;
+}
+
+.logo {
+  margin-bottom: 5px;
+  margin-left: 11px;
+  overflow: hidden;
+}
+
+#info {
+  opacity: 0;
+  width: 50%;
+  font-family: Description;
+  display: table-cell;
+  vertical-align: middle;
+  color: #FFF;
+  text-align: center;
+  overflow: hidden;
+  -webkit-transition: all 1s !important;
+  -moz-transition: all 1s !important;
+  -o-transition: all 1s !important;
+  transition: all 1s !important;
+}
+
+.visible {
+  opacity: 1 !important;
+  -webkit-transition: all 3s !important;
+  -moz-transition: all 3s !important;
+  -o-transition: all 3s !important;
+  transition: all 3s !important;
 }

@@ -14,6 +14,7 @@ var application = application || (function () {
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
   var _click_mode = false;
+  var _paused = true;
 
   var _initialize = function(canvas){
 
@@ -50,9 +51,12 @@ var application = application || (function () {
     // Initialize
 
     //_initialize_gui();
-    _mouse_init();
-    _keyboard_init();
-    _tick();
+    setTimeout(function(){
+      _show_ui();
+      _mouse_init();
+      _keyboard_init();
+      _tick();
+    }, 0);
   };
 
   var _initialize_request_animation_frame = function(){
@@ -138,7 +142,10 @@ var application = application || (function () {
     // Control mode
 
     Mousetrap.bind("space", function() {
-      application.renderer.pause();
+      _paused = !_paused;
+      if (_paused) _show_ui();
+      else _hide_ui();
+      application.renderer.pause(_paused);
       return false;
     });
   };
@@ -165,14 +172,14 @@ var application = application || (function () {
       if (_click_mode){
         switch (event.which){
           case 1:
-            application.renderer.gravity_update(_mouse.x, _mouse.y);
-            break;
+          application.renderer.gravity_update(_mouse.x, _mouse.y);
+          break;
           case 2:
-            // Middle click
-            break;
+          // Middle click
+          break;
           case 3:
-            // Right click
-            break;
+          // Right click
+          break;
         }
       } else {
         _mouse.buttons[event.which] = true;
@@ -227,6 +234,22 @@ var application = application || (function () {
 
     _mouse.dx = 0.0;
     _mouse.dy = 0.0;
+  };
+
+  // User interface
+
+  var _hide_ui = function(){
+    var logo_holder = document.getElementById('logo-holder');
+    logo_holder.className = "";
+    var info = document.getElementById('info');
+    info.className = "";
+  };
+
+  var _show_ui = function(){
+    var logo_holder = document.getElementById('logo-holder');
+    logo_holder.className = "visible";
+    var info = document.getElementById('info');
+    info.className = "visible";
   };
 
   // Public space
