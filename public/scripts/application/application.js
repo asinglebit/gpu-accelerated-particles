@@ -130,7 +130,6 @@ var application = application || (function () {
         _hide_ui();
         application.audio.set_muffle(2000);
       }
-      application.audio.play();
       application.renderer.pause(_paused);
       return false;
     });
