@@ -91,3 +91,11 @@ body {
   -o-transition: opacity 4s;
   transition: opacity 4s;
 }
+
+.blinker {
+  animation: blinker 2s cubic-bezier(0.445, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes blinker {
+  50% { opacity: 0.3; }
+}
