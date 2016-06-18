@@ -6,10 +6,10 @@ var application = application || (function () {
 
   // Private space
 
-  var K_ROTATE = 0.005;
-  var K_PAN = 0.05;
-  var K_ZOOM = 0.05;
-  var K_ZOOM_WHEEL = 10;
+  var K_ROTATE = 0.002;
+  var K_PAN = 0.0009;
+  var K_ZOOM = 0.005;
+  var K_ZOOM_WHEEL = 0.05;
 
   var _gui = null;
   var _mouse = {x: 0, y: 0, dx: 0, dy: 0, buttons: new Array(4)};
@@ -55,7 +55,7 @@ var application = application || (function () {
       _show_ui();
       _mouse_init();
       _keyboard_init();
-      _tick();      
+      _tick();
       application.audio.play();
     }, 0);
   };
@@ -92,19 +92,19 @@ var application = application || (function () {
 
     // Reset camera
 
-    Mousetrap.bind("z", function() {
+    Mousetrap.bind(['Z', 'z', 'Я', 'я'], function() {
       application.renderer.camera_reset();
     });
 
     // Reset simulation
 
-    Mousetrap.bind("r", function() {
+    Mousetrap.bind(['R', 'r', 'К', 'к'], function() {
       application.renderer.simulation_reset();
     });
 
     // Change rendering buffer
 
-    Mousetrap.bind("b", function() {
+    Mousetrap.bind(['B', 'b', 'И', 'и'], function() {
       _change_buffer();
     });
 
@@ -156,16 +156,8 @@ var application = application || (function () {
 
     window.addEventListener("mousedown", function(event) {
       if (_click_mode){
-        switch (event.which){
-          case 1:
+        if (event.which == 1){
           application.renderer.gravity_update(_mouse.x, _mouse.y);
-          break;
-          case 2:
-          // Middle click
-          break;
-          case 3:
-          // Right click
-          break;
         }
       } else {
         _mouse.buttons[event.which] = true;

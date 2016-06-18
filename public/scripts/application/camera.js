@@ -18,6 +18,8 @@ void function(){
 
   // Private members
 
+  var K_EASING = 0.9;
+
   var HOME_VIEW = {
     YAW_ANGLE : 0.785398,
     PITCH_ANGLE : 0.785398,
@@ -41,9 +43,53 @@ void function(){
     this.view_matrix = mat4.create();
     this.projection_matrix = mat4.create();
     this.view_projection_matrix = mat4.create();
+
+    this.delta = {
+      rotation : [0, 0],
+      pan : [0, 0],
+      zoom : 0
+    }
   };
 
   camera.prototype.update = function() {
+
+    // Rotation easing
+
+    if (this.delta.rotation[0] != 0){
+      this.yaw_angle += this.delta.rotation[0];
+      this.delta.rotation[0] = this.delta.rotation[0] * K_EASING;
+      if (Math.abs(this.delta.rotation[0]) < 0.00001) this.delta.rotation[0] = 0;
+    }
+    if (this.delta.rotation[1] != 0){
+      this.pitch_angle += this.delta.rotation[1];
+      this.delta.rotation[1] = this.delta.rotation[1] * K_EASING;
+      if (Math.abs(this.delta.rotation[1]) < 0.00001) this.delta.rotation[1] = 0;
+    }
+
+    // Translation easing
+
+    if (this.delta.pan[0] != 0){
+      vec3.scaleAndAdd(this.target, this.target, this.right, this.delta.pan[0] * this.radius);
+      this.delta.pan[0] = this.delta.pan[0] * K_EASING;
+      if (Math.abs(this.delta.pan[0]) < 0.00001) this.delta.pan[0] = 0;
+    }
+    if (this.delta.pan[1] != 0){
+      vec3.scaleAndAdd(this.target, this.target, this.up, this.delta.pan[1] * this.radius);
+      this.delta.pan[1] = this.delta.pan[1] * K_EASING;
+      if (Math.abs(this.delta.pan[1]) < 0.00001) this.delta.pan[1] = 0;
+    }
+
+    // Zoom easing
+
+    if (this.delta.zoom != 0){
+      if (this.radius > this.delta.zoom){
+        this.radius -= this.delta.zoom * this.radius;
+        this.delta.zoom = this.delta.zoom * K_EASING;
+      } else {
+        this.radius = 0.1;
+        this.delta.zoom = 0;
+      }
+    }
 
     // Update variables
 
@@ -67,17 +113,17 @@ void function(){
   };
 
   camera.prototype.rotate = function(x, y) {
-    this.yaw_angle += x;
-    this.pitch_angle += y;
+    this.delta.rotation[0] = (this.delta.rotation[0] == 0) ? x : this.delta.rotation[0] + x;
+    this.delta.rotation[1] = (this.delta.rotation[1] == 0) ? y : this.delta.rotation[1] + y;
   };
 
   camera.prototype.pan = function(x, y) {
-    vec3.scaleAndAdd(this.target, this.target, this.right, x);
-    vec3.scaleAndAdd(this.target, this.target, this.up, y);
+    this.delta.pan[0] = (this.delta.pan[0] == 0) ? x : this.delta.pan[0] + x;
+    this.delta.pan[1] = (this.delta.pan[1] == 0) ? y : this.delta.pan[1] + y;
   };
 
   camera.prototype.zoom = function(value) {
-    this.radius -= value;
+    this.delta.zoom = value;
   };
 
   camera.prototype.calculate = function() {
