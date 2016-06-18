@@ -26,9 +26,9 @@ void function(){
     varying vec4 v_color;
 
     void main() {
-      gl_PointSize = 1.7;
+      gl_PointSize = 1.1;
       vec4 velocity = texture2D(u_sampler_1, a_uv);
-      v_color = vec4(0.3*length(velocity), 0.2,  0.7/length(velocity), 0.3);
+      v_color = vec4(0.3*length(velocity), 0.2,  0.7/length(velocity), 0.1);
       gl_Position = u_view_projection_matrix * texture2D(u_sampler_0, a_uv);
     }
     `,

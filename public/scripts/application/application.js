@@ -7,7 +7,7 @@ var application = application || (function () {
   // Private space
 
   var K_ROTATE = 0.005;
-  var K_PAN = 0.005;
+  var K_PAN = 0.05;
   var K_ZOOM = 0.05;
   var K_ZOOM_WHEEL = 10;
 
@@ -17,8 +17,12 @@ var application = application || (function () {
 
   var _initialize = function(canvas){
 
-    // Check application availability
+    // Check application
 
+    if (typeof application.audio == "undefined") {
+      console.log("application.js : No 'audio' module found! Be sure to load it up first!");
+      return;
+    };
     if (typeof application.renderer == "undefined") {
       console.log("application.js : No 'renderer' module found! Be sure to load it up first!");
       return;
@@ -32,8 +36,9 @@ var application = application || (function () {
 
     _initialize_request_animation_frame();
 
-    // Initialize the renderer module
+    // Initialize modules
 
+    application.audio.initialize();
     application.renderer.initialize(canvas);
 
     // Resize event
