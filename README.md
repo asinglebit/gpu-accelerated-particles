@@ -13,6 +13,9 @@ Controls:
   - Middle mouse button - Pan
   - Mouse wheel - Snapping zoom
   - Ctrl + Left mouse button - Assign new gravity center
+  - R - Reset the simulation
+  - Z - Reset the camera
+  - B - Buffer switch
 
 Screenshot:
 
