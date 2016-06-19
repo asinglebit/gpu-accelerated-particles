@@ -5,6 +5,7 @@ This is a project I am working on in my spare time. Mainly for fun, research and
 This demo uses experimental WebGL features such as floating point textures and rendering to multiple frame buffers. May not work on most browsers. Firefox and a decent GPU should do fine.
 
 Live demo: http://singlebit.org/views/demos/gpu_accelerated_particles/index.html
+Youtube: https://www.youtube.com/watch?v=lJe5zEr4b0Q
 
 Controls:
 
