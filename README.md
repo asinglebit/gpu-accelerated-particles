@@ -1,8 +1,10 @@
 # GPU Accelerated Particles
 
-This is a project I am working on in my spare time. Mainly for fun, research and mastering OpenGL ES 2.0. This is a particle system simulated and rendered entirely on GPU.
+This is a particle system made up of 9.000.000 particles / 3000 px * 3000 px buffers; simulated and rendered entirely on GPU. Video is kinda slow because of screen capturing software.
 
-This demo uses experimental WebGL features such as floating point textures and rendering to multiple frame buffers. May not work on most browsers. Firefox and a decent GPU should do fine.
+This demo uses experimental WebGL features such as floating point textures and rendering to multiple frame buffers. May not work on most browsers. Firefox and a decent GPU should do fine. Tutorial will be available soon.
+
+Live demo showcases 4.194.304 particles / 2048 px * 2048 px buffers:
 
 Live demo: http://singlebit.org/views/demos/gpu_accelerated_particles/index.html
 
