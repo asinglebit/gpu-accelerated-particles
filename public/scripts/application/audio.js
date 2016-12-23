@@ -57,14 +57,16 @@ void function(){
   // Controls
 
   var _play = function(){
-    if (!_started){
+    if (!_started && _source){
       _started = true;
       _source.start(0);
     };
   };
 
   var _set_muffle = function(value){
-    _muffle.frequency.value = value;
+    if (_muffle) {
+      _muffle.frequency.value = value;
+    }
   };
 
   // Public
