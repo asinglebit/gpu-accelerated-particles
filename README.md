@@ -6,8 +6,6 @@ Live demo showcases 4.194.304 particles / 2048 px * 2048 px buffers:
 
 Live demo: http://singlebit.org/views/demos/gpu_accelerated_particles/index.html
 
-Youtube: https://www.youtube.com/watch?v=lJe5zEr4b0Q
-
 Soundcloud: https://soundcloud.com/visviva/shader-galaxies
 
 Controls:
