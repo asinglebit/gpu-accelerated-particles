@@ -4,8 +4,6 @@ This is a particle system made up of 9.000.000 particles / 3000 px * 3000 px buf
 
 Live demo showcases 4.194.304 particles / 2048 px * 2048 px buffers:
 
-Live demo: http://singlebit.org/views/demos/gpu_accelerated_particles/index.html
-
 Soundcloud: https://soundcloud.com/visviva/shader-galaxies
 
 Controls:
